@@ -11,21 +11,21 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
         /// <summary>
         /// Denotes that the packet is fragmented.
         /// </summary>
-        Fragmented = 0x01,
+        Fragmented = 0x10,
 
         /// <summary>
         /// Denotes that the packet is a command.
         /// </summary>
-        NewProtocol = 0x02,
+        NewProtocol = 0x20,
 
         /// <summary>
         /// Denotes that the packet is compressed.
         /// </summary>
-        Compressed = 0x04,
+        Compressed = 0x40,
 
         /// <summary>
         /// Denotes that the packet is unencrypted.
         /// </summary>
-        Unencrypted = 0x08,
+        Unencrypted = 0x80,
     }
 }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
+using ExtensionNet.Endian;
+
 namespace FreeSpeak.Protocols.TeamSpeak.Packets
 {
     /// <summary>
@@ -56,6 +58,41 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
 
                 _data = value;
             }
+        }
+
+        /// <summary>
+        /// Creates a <see cref="ClientPacket"/> instance from a byte array.
+        /// </summary>
+        /// <param name="bytes">The bytes to parse.</param>
+        /// <returns>An instance parsed from the bytes.</returns>
+        public static ClientPacket FromBytes(byte[] bytes)
+        {
+            ulong mac = BitConverter.ToUInt64(bytes, 0);
+            ushort pid = BitConverter.ToUInt16(bytes, 8);
+            ushort cid = BitConverter.ToUInt16(bytes, 10);
+            byte pt = bytes[12];
+            byte[] data = new byte[bytes.Length - 13];
+            Array.Copy(bytes, 13, data, 0, data.Length);
+
+            PacketFlags flags = (PacketFlags)(pt & 0xF0);
+            PacketType type = (PacketType)(pt & 0x0F);
+
+            if (BitConverter.IsLittleEndian)
+            {
+                mac = mac.ChangeEndianness();
+                pid = pid.ChangeEndianness();
+                cid = cid.ChangeEndianness();
+            }
+
+            return new ClientPacket()
+            {
+                MessageAuthenticationCode = mac,
+                PacketId = pid,
+                ClientId = cid,
+                Flags = flags,
+                Type = type,
+                Data = data
+            };
         }
     }
 }
