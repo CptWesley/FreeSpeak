@@ -1,6 +1,6 @@
-﻿using FreeSpeak.Protocols.TeamSpeak.Packets;
+﻿using System;
+using FreeSpeak.Protocols.TeamSpeak.Packets;
 using Xunit;
-
 using static AssertNet.Xunit.Assertions;
 
 namespace FreeSpeak.Protocols.TeamSpeak.Tests.Packets
@@ -30,6 +30,18 @@ namespace FreeSpeak.Protocols.TeamSpeak.Tests.Packets
             AssertThat(packet.ClientId).IsEqualTo(435);
             AssertThat(packet.PacketType).IsEqualTo(12);
             AssertThat(packet.Data).HasSize(3).ContainsExactly(33, 45, 72);
+        }
+
+        /// <summary>
+        /// Checks that we can't set too large data.
+        /// </summary>
+        [Fact]
+        public static void TooMuchDataTest()
+        {
+            ClientPacket packet = new ClientPacket();
+            byte[] bytes = new byte[2048];
+            AssertThat(() => packet.Data = bytes).ThrowsExactlyException<ArgumentException>()
+                .WithMessage("Maximum data length is 487, but tried to set 2048 bytes.");
         }
     }
 }
