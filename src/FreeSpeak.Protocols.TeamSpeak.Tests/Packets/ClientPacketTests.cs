@@ -144,5 +144,37 @@ namespace FreeSpeak.Protocols.TeamSpeak.Tests.Packets
             copy.Data = new byte[42];
             AssertThat(packet).IsNotEqualTo(copy);
         }
+
+        /// <summary>
+        /// Checks that we can convert a packet to bytes and read them as bytes again.
+        /// </summary>
+        [Fact]
+        public void ToAndFromBytesTest()
+        {
+            byte[] bytes = ClientPacket.ToBytes(packet);
+            ClientPacket copy = ClientPacket.FromBytes(bytes);
+            AssertThat(copy).IsEqualTo(packet);
+        }
+
+        /// <summary>
+        /// Checks that the correct exception is thrown when we pass invalid arguments to the function.
+        /// </summary>
+        [Fact]
+        public void ToBytesArgumentNullExceptionTest()
+            => AssertThat(() => ClientPacket.ToBytes(null)).ThrowsExactlyException<ArgumentNullException>();
+
+        /// <summary>
+        /// Checks that the correct exception is thrown when we pass invalid arguments to the function.
+        /// </summary>
+        [Fact]
+        public void FromBytesArgumentNullExceptionTest()
+            => AssertThat(() => ClientPacket.FromBytes(null)).ThrowsExactlyException<ArgumentNullException>();
+
+        /// <summary>
+        /// Checks that the correct exception is thrown when we pass invalid arguments to the function.
+        /// </summary>
+        [Fact]
+        public void FromBytesArgumentExceptionTest()
+            => AssertThat(() => ClientPacket.FromBytes(new byte[7])).ThrowsExactlyException<ArgumentException>();
     }
 }
