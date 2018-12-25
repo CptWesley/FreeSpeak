@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
-
+using System.Linq;
 using ExtensionNet.Endian;
 
 namespace FreeSpeak.Protocols.TeamSpeak.Packets
@@ -93,6 +93,43 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
                 Type = type,
                 Data = data
             };
+        }
+
+        /// <summary>
+        /// Determines whether the specified <see cref="object" />, is equal to this instance.
+        /// </summary>
+        /// <param name="obj">The <see cref="object" /> to compare with this instance.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
+        /// </returns>
+        public override bool Equals(object obj)
+        {
+            if (obj is ClientPacket other)
+            {
+                return MessageAuthenticationCode == other.MessageAuthenticationCode
+                    && PacketId == other.PacketId
+                    && ClientId == other.ClientId
+                    && Flags == other.Flags
+                    && Type == other.Type
+                    && _data.SequenceEqual(other._data);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
+        /// </returns>
+        public override int GetHashCode()
+        {
+            int mac1 = (int)(MessageAuthenticationCode & 0x00000000FFFFFFFF);
+            int mac2 = (int)(MessageAuthenticationCode & 0xFFFFFFFF00000000);
+            int mac = mac1 + mac2;
+
+            return GetType().GetHashCode() * (mac + (2 * PacketId) + (3 * ClientId) + (4 * ((int)Flags + (int)Type)) + (5 * _data.Sum(x => x)));
         }
     }
 }

@@ -9,6 +9,11 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
     public enum PacketFlags
     {
         /// <summary>
+        /// Indicates that there are no flags.
+        /// </summary>
+        None = 0x00,
+
+        /// <summary>
         /// Denotes that the packet is fragmented.
         /// </summary>
         Fragmented = 0x10,
