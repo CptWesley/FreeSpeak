@@ -31,9 +31,14 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
         public ushort ClientId { get; set; }
 
         /// <summary>
+        /// Gets or sets the packet flags.
+        /// </summary>
+        public PacketFlags Flags { get; set; }
+
+        /// <summary>
         /// Gets or sets the packet type.
         /// </summary>
-        public byte PacketType { get; set; }
+        public PacketType Type { get; set; }
 
         /// <summary>
         /// Gets or sets the data.

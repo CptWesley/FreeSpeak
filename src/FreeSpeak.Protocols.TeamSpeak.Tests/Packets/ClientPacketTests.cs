@@ -21,14 +21,16 @@ namespace FreeSpeak.Protocols.TeamSpeak.Tests.Packets
                 MessageAuthenticationCode = 3425,
                 PacketId = 2,
                 ClientId = 435,
-                PacketType = 12,
+                Flags = PacketFlags.Compressed | PacketFlags.Fragmented,
+                Type = PacketType.Voice,
                 Data = new byte[] { 33, 45, 72 }
             };
 
             AssertThat(packet.MessageAuthenticationCode).IsEqualTo(3425);
             AssertThat(packet.PacketId).IsEqualTo(2);
             AssertThat(packet.ClientId).IsEqualTo(435);
-            AssertThat(packet.PacketType).IsEqualTo(12);
+            AssertThat(packet.Flags).IsEqualTo(PacketFlags.Compressed | PacketFlags.Fragmented);
+            AssertThat(packet.Type).IsEqualTo(PacketType.Voice);
             AssertThat(packet.Data).HasSize(3).ContainsExactly(33, 45, 72);
         }
 
