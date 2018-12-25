@@ -35,4 +35,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FreeSpeak.Protocols.TeamSpeak\FreeSpeak.Protocols.TeamSpeak.csproj" />
+  </ItemGroup>
+
 </Project>
