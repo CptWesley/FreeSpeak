@@ -100,6 +100,6 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
 
         /// <inheritdoc />
         public override int GetHashCode()
-            => base.GetHashCode() * GetType().GetHashCode();
+            => base.GetHashCode();
     }
 }
