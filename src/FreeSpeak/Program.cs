@@ -1,4 +1,4 @@
-﻿using System;
+﻿using FreeSpeak.Servers.TeamSpeak;
 
 namespace FreeSpeak
 {
@@ -13,8 +13,11 @@ namespace FreeSpeak
         /// <param name="args">The program arguments.</param>
         public static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-            Console.Read();
+            using (TeamSpeakServer server = new TeamSpeakServer(439))
+            {
+                server.Logger = new ConsoleLogger();
+                server.Start();
+            }
         }
     }
 }

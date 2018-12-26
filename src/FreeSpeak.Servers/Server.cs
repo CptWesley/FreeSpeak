@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
 
 namespace FreeSpeak.Servers
 {
@@ -10,8 +9,6 @@ namespace FreeSpeak.Servers
     /// </summary>
     public abstract class Server : IDisposable
     {
-        private bool active = false;
-        private Task connectionTask;
         private UdpClient udp;
 
         /// <summary>
@@ -21,7 +18,6 @@ namespace FreeSpeak.Servers
         public Server(int port)
         {
             Port = port;
-            active = false;
             Logger = new DummyLogger();
         }
 
@@ -49,32 +45,8 @@ namespace FreeSpeak.Servers
         /// </summary>
         public void Start()
         {
-            Logger.WriteInfo($"Attempting to listen to port {Port}...");
-            if (active)
-            {
-                Logger.WriteWarning("Server is already active.");
-            }
-            else
-            {
-                active = true;
-                connectionTask = Task.Run(() => Run());
-            }
-        }
-
-        /// <summary>
-        /// Stops the server.
-        /// </summary>
-        public void Stop()
-        {
-            Logger.WriteInfo($"Attempting to stop the server...");
-            if (!active)
-            {
-                Logger.WriteWarning("Server is not active.");
-            }
-            else
-            {
-                active = false;
-            }
+            Logger.WriteInfo($"Listening to port {Port}...");
+            Run();
         }
 
         /// <summary>
@@ -91,7 +63,6 @@ namespace FreeSpeak.Servers
         protected virtual void Dispose(bool managed)
         {
             udp.Dispose();
-            connectionTask.Dispose();
         }
 
         /// <summary>
@@ -108,7 +79,7 @@ namespace FreeSpeak.Servers
         {
             using (udp = new UdpClient(new IPEndPoint(IPAddress.Any, Port)))
             {
-                while (active)
+                while (true)
                 {
                     IPEndPoint ep = null;
                     byte[] received = udp.Receive(ref ep);

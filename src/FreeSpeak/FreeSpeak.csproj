@@ -27,5 +27,10 @@
 		<PrivateAssets>all</PrivateAssets>
 	</PackageReference>
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\FreeSpeak.Servers.TeamSpeak\FreeSpeak.Servers.TeamSpeak.csproj" />
+    <ProjectReference Include="..\FreeSpeak.Servers\FreeSpeak.Servers.csproj" />
+  </ItemGroup>
 
 </Project>
