@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace FreeSpeak.Servers
 {
@@ -9,7 +10,7 @@ namespace FreeSpeak.Servers
     /// </summary>
     public abstract class Server : IDisposable
     {
-        private UdpClient udp;
+        private UdpClient udp = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Server"/> class.
@@ -32,6 +33,11 @@ namespace FreeSpeak.Servers
         public int Port { get; }
 
         /// <summary>
+        /// Gets a value indicating whether this server is listening.
+        /// </summary>
+        public bool IsListening => udp != null;
+
+        /// <summary>
         /// Releases unmanaged and - optionally - managed resources.
         /// </summary>
         public void Dispose()
@@ -46,7 +52,32 @@ namespace FreeSpeak.Servers
         public void Start()
         {
             Logger.WriteInfo($"Listening to port {Port}...");
-            Run();
+            if (udp == null)
+            {
+                udp = new UdpClient(new IPEndPoint(IPAddress.Any, Port));
+                Task.Run(() => Run());
+            }
+            else
+            {
+                Logger.WriteWarning($"Server already listening at port {Port}.");
+            }
+        }
+
+        /// <summary>
+        /// Stops the server.
+        /// </summary>
+        public void Stop()
+        {
+            Logger.WriteInfo($"Stopping the server listening at port {Port}...");
+            if (udp != null)
+            {
+                udp.Dispose();
+                udp = null;
+            }
+            else
+            {
+                Logger.WriteWarning($"No server listening at port {Port}.");
+            }
         }
 
         /// <summary>
@@ -62,7 +93,11 @@ namespace FreeSpeak.Servers
         /// <param name="managed"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
         protected virtual void Dispose(bool managed)
         {
-            udp.Dispose();
+            if (udp != null)
+            {
+                udp.Dispose();
+                udp = null;
+            }
         }
 
         /// <summary>
@@ -77,14 +112,11 @@ namespace FreeSpeak.Servers
 
         private void Run()
         {
-            using (udp = new UdpClient(new IPEndPoint(IPAddress.Any, Port)))
+            while (true)
             {
-                while (true)
-                {
-                    IPEndPoint ep = null;
-                    byte[] received = udp.Receive(ref ep);
-                    MessageReceivedCallback(ep, received);
-                }
+                IPEndPoint ep = null;
+                byte[] received = udp.Receive(ref ep);
+                MessageReceivedCallback(ep, received);
             }
         }
     }

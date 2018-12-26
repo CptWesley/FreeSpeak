@@ -31,7 +31,8 @@ namespace FreeSpeak.Servers.TeamSpeak
             else
             {
                 Logger.WriteInfo($"Doesn't know {ep}");
-                identities.Add(ep, new ClientIdentity());
+                identities.Add(ep, new ClientIdentity(ep));
+                Send(ep, new byte[24]);
             }
         }
     }

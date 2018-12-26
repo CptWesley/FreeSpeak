@@ -21,7 +21,7 @@ namespace FreeSpeak
         public void WriteWarning(string message)
             => WriteLine($"[WARNING] {message}", ConsoleColor.Yellow);
 
-        private void WriteLine(string text, ConsoleColor color)
+        private static void WriteLine(string text, ConsoleColor color)
         {
             ConsoleColor oldColor = Console.ForegroundColor;
             Console.ForegroundColor = color;
