@@ -22,6 +22,7 @@ namespace FreeSpeak.Servers
         {
             Port = port;
             active = false;
+            Logger = new DummyLogger();
         }
 
         /// <summary>
