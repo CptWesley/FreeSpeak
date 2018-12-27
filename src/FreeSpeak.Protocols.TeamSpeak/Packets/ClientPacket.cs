@@ -94,20 +94,5 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
 
             return result;
         }
-
-        /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            if (obj is ClientPacket other)
-            {
-                return base.Equals(other) && ClientId == other.ClientId;
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc />
-        public override int GetHashCode()
-            => base.GetHashCode() * (GetType().GetHashCode() + ClientId);
     }
 }

@@ -85,20 +85,5 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
 
             return result;
         }
-
-        /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            if (obj is ServerPacket other)
-            {
-                return base.Equals(other);
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc />
-        public override int GetHashCode()
-            => base.GetHashCode();
     }
 }
