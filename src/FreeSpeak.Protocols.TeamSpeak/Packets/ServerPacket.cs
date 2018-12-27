@@ -1,5 +1,8 @@
 ﻿using System;
+using System.IO;
 using ExtensionNet.Endian;
+using ExtensionNet.Streams;
+using ExtensionNet.Types;
 
 namespace FreeSpeak.Protocols.TeamSpeak.Packets
 {
@@ -27,29 +30,25 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
                 throw new ArgumentException($"The packet must be at least 11 bytes, but was only {bytes.Length} bytes.");
             }
 
-            ulong mac = BitConverter.ToUInt64(bytes, 0);
-            ushort pid = BitConverter.ToUInt16(bytes, 8);
-            byte pt = bytes[10];
-            byte[] data = new byte[bytes.Length - 11];
-            Array.Copy(bytes, 11, data, 0, data.Length);
-
-            PacketFlags flags = (PacketFlags)(pt & 0xF0);
-            PacketType type = (PacketType)(pt & 0x0F);
-
-            if (BitConverter.IsLittleEndian)
+            using (MemoryStream stream = new MemoryStream(bytes))
             {
-                mac = mac.ChangeEndianness();
-                pid = pid.ChangeEndianness();
+                ulong mac = stream.ReadUInt64(Endianness.BigEndian);
+                ushort pid = stream.ReadUInt16(Endianness.BigEndian);
+                byte pt = stream.ReadUInt8();
+                byte[] data = stream.ReadUInt8(bytes.Length - 11);
+
+                PacketFlags flags = (PacketFlags)(pt & 0xF0);
+                PacketType type = (PacketType)(pt & 0x0F);
+
+                return new ServerPacket()
+                {
+                    MessageAuthenticationCode = mac,
+                    PacketId = pid,
+                    Flags = flags,
+                    Type = type,
+                    Data = data
+                };
             }
-
-            return new ServerPacket()
-            {
-                MessageAuthenticationCode = mac,
-                PacketId = pid,
-                Flags = flags,
-                Type = type,
-                Data = data
-            };
         }
 
         /// <summary>

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.IO;
 using ExtensionNet.Endian;
+using ExtensionNet.Streams;
+using ExtensionNet.Types;
 
 namespace FreeSpeak.Protocols.TeamSpeak.Packets
 {
@@ -32,32 +35,27 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
                 throw new ArgumentException($"The packet must be at least 13 bytes, but was only {bytes.Length} bytes.");
             }
 
-            ulong mac = BitConverter.ToUInt64(bytes, 0);
-            ushort pid = BitConverter.ToUInt16(bytes, 8);
-            ushort cid = BitConverter.ToUInt16(bytes, 10);
-            byte pt = bytes[12];
-            byte[] data = new byte[bytes.Length - 13];
-            Array.Copy(bytes, 13, data, 0, data.Length);
-
-            PacketFlags flags = (PacketFlags)(pt & 0xF0);
-            PacketType type = (PacketType)(pt & 0x0F);
-
-            if (BitConverter.IsLittleEndian)
+            using (MemoryStream stream = new MemoryStream(bytes))
             {
-                mac = mac.ChangeEndianness();
-                pid = pid.ChangeEndianness();
-                cid = cid.ChangeEndianness();
+                ulong mac = stream.ReadUInt64(Endianness.BigEndian);
+                ushort pid = stream.ReadUInt16(Endianness.BigEndian);
+                ushort cid = stream.ReadUInt16(Endianness.BigEndian);
+                byte pt = stream.ReadUInt8();
+                byte[] data = stream.ReadUInt8(bytes.Length - 13);
+
+                PacketFlags flags = (PacketFlags)(pt & 0xF0);
+                PacketType type = (PacketType)(pt & 0x0F);
+
+                return new ClientPacket()
+                {
+                    MessageAuthenticationCode = mac,
+                    PacketId = pid,
+                    ClientId = cid,
+                    Flags = flags,
+                    Type = type,
+                    Data = data
+                };
             }
-
-            return new ClientPacket()
-            {
-                MessageAuthenticationCode = mac,
-                PacketId = pid,
-                ClientId = cid,
-                Flags = flags,
-                Type = type,
-                Data = data
-            };
         }
 
         /// <summary>
