@@ -73,11 +73,8 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
             return packet.ToBytes();
         }
 
-        /// <summary>
-        /// Converts the packet to a series of bytes.
-        /// </summary>
-        /// <returns>Bytes representing the packet.</returns>
-        public byte[] ToBytes()
+        /// <inheritdoc/>
+        public override byte[] ToBytes()
         {
             int length = Data.Length + 13;
             byte[] result = new byte[length];

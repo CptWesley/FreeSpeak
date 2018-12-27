@@ -56,6 +56,12 @@ namespace FreeSpeak.Protocols.TeamSpeak.Packets
         }
 
         /// <summary>
+        /// Converts the packet to a series of bytes.
+        /// </summary>
+        /// <returns>Bytes representing the packet.</returns>
+        public abstract byte[] ToBytes();
+
+        /// <summary>
         /// Determines whether the specified <see cref="object" />, is equal to this instance.
         /// </summary>
         /// <param name="obj">The <see cref="object" /> to compare with this instance.</param>
