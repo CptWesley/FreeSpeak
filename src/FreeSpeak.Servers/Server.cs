@@ -33,11 +33,6 @@ namespace FreeSpeak.Servers
         public int Port { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this server is listening.
-        /// </summary>
-        public bool IsListening => udp != null;
-
-        /// <summary>
         /// Releases unmanaged and - optionally - managed resources.
         /// </summary>
         public void Dispose()
@@ -49,34 +44,14 @@ namespace FreeSpeak.Servers
         /// <summary>
         /// Starts the server.
         /// </summary>
-        public void Start()
+        public void StartListening()
         {
             Logger.WriteInfo($"Listening to port {Port}...");
-            if (udp == null)
-            {
-                udp = new UdpClient(new IPEndPoint(IPAddress.Any, Port));
-                Task.Run(() => Run());
-            }
-            else
-            {
-                Logger.WriteWarning($"Server already listening at port {Port}.");
-            }
-        }
+            udp = new UdpClient(new IPEndPoint(IPAddress.Any, Port));
 
-        /// <summary>
-        /// Stops the server.
-        /// </summary>
-        public void Stop()
-        {
-            Logger.WriteInfo($"Stopping the server listening at port {Port}...");
-            if (udp != null)
+            while (true)
             {
-                udp.Dispose();
-                udp = null;
-            }
-            else
-            {
-                Logger.WriteWarning($"No server listening at port {Port}.");
+                Receive();
             }
         }
 
@@ -110,14 +85,11 @@ namespace FreeSpeak.Servers
             udp.Send(message, message.Length, ep);
         }
 
-        private void Run()
+        private void Receive()
         {
-            while (true)
-            {
-                IPEndPoint ep = null;
-                byte[] received = udp.Receive(ref ep);
-                MessageReceivedCallback(ep, received);
-            }
+            IPEndPoint ep = null;
+            byte[] received = udp.Receive(ref ep);
+            MessageReceivedCallback(ep, received);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace FreeSpeak
             ConsoleLogger logger = new ConsoleLogger();
             TeamSpeakServer server = new TeamSpeakServer(439);
             server.Logger = logger;
-            server.Start();
+            server.StartListening();
 
             while (true)
             {
