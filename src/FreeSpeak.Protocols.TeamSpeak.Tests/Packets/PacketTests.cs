@@ -1,5 +1,4 @@
 ﻿using System;
-using ExtensionNet.Copy;
 using FreeSpeak.Protocols.TeamSpeak.Packets;
 using Xunit;
 using static AssertNet.Xunit.Assertions;
