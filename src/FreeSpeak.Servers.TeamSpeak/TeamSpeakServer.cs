@@ -32,7 +32,7 @@ namespace FreeSpeak.Servers.TeamSpeak
             }
 
             ClientIdentity identity = identities[ep];
-            identity.Handle(ClientPacket.FromBytes(message));
+            ClientPacket packet = ClientPacket.FromBytes(message);
         }
     }
 }
