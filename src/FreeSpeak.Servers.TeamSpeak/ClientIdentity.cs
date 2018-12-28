@@ -12,7 +12,9 @@ namespace FreeSpeak.Servers.TeamSpeak
         /// </summary>
         /// <param name="endPoint">The end point on which the client communicates.</param>
         public ClientIdentity(IPEndPoint endPoint)
-            => EndPoint = endPoint;
+        {
+            EndPoint = endPoint;
+        }
 
         /// <summary>
         /// Gets the end point used to communicate with the client.

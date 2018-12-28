@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Net;
+using FreeSpeak.Protocols.TeamSpeak.Packets;
 
 namespace FreeSpeak.Servers.TeamSpeak
 {
@@ -24,16 +25,14 @@ namespace FreeSpeak.Servers.TeamSpeak
         /// <inheritdoc/>
         protected override void MessageReceivedCallback(IPEndPoint ep, byte[] message)
         {
-            if (identities.ContainsKey(ep))
+            if (!identities.ContainsKey(ep))
             {
-                Logger.WriteInfo($"Knows {ep}");
-            }
-            else
-            {
-                Logger.WriteInfo($"Doesn't know {ep}");
+                Logger.WriteInfo($"New connection from {ep}");
                 identities.Add(ep, new ClientIdentity(ep));
-                Send(ep, new byte[24]);
             }
+
+            ClientIdentity identity = identities[ep];
+            identity.Handle(ClientPacket.FromBytes(message));
         }
     }
 }
