@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 
 namespace FreeSpeak.Protocols.TeamSpeak.Compression
 {
@@ -19,11 +18,11 @@ namespace FreeSpeak.Protocols.TeamSpeak.Compression
         /// <returns>The compressed data.</returns>
         public byte[] Compress(byte[] data)
         {
-            //int headerLength = data.Length < 216 ? 3 : 9;
-            int headerLength = 9;
+            int headerLength = data.Length < 216 ? 3 : 9;
             List<byte> result = new List<byte>();
             result.AddRange(new byte[headerLength + 4]);
 
+            bool done = false;
             int control = 1 << 31;
             int controlPosition = headerLength;
             int sourcePosition = 0;
@@ -35,8 +34,14 @@ namespace FreeSpeak.Protocols.TeamSpeak.Compression
 
             while (sourcePosition + 10 < data.Length)
             {
+                if (CheckInefficient(ref control, sourcePosition, 1, ref controlPosition, result, data))
+                {
+                    done = true;
+                    break;
+                }
+
                 byte[] nextBytes = new byte[] { 0, data[sourcePosition], data[sourcePosition + 1], data[sourcePosition + 2] };
-                if (BitConverter.IsLittleEndian)
+                if (!BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(nextBytes);
                 }
@@ -97,6 +102,11 @@ namespace FreeSpeak.Protocols.TeamSpeak.Compression
                 }
             }
 
+            if (done)
+            {
+                return result.ToArray();
+            }
+
             while (sourcePosition < data.Length)
             {
                 if ((control & 1) != 0)
@@ -118,8 +128,7 @@ namespace FreeSpeak.Protocols.TeamSpeak.Compression
             }
 
             WriteControl(result, controlPosition, (control >> 1) | (1 << 31));
-            //throw new Exception($"Size: {data.Length}\nHeader length: {headerLength}");
-            WriteHeader(result, data.Length, headerLength == 3);
+            WriteHeader(result, data.Length, headerLength == 3, true);
 
             return result.ToArray();
         }
@@ -127,7 +136,7 @@ namespace FreeSpeak.Protocols.TeamSpeak.Compression
         private void WriteControl(List<byte> result, int position, int control)
         {
             byte[] bytes = BitConverter.GetBytes(control);
-            if (BitConverter.IsLittleEndian)
+            if (!BitConverter.IsLittleEndian)
             {
                 Array.Reverse(bytes);
             }
@@ -138,20 +147,23 @@ namespace FreeSpeak.Protocols.TeamSpeak.Compression
             }
         }
 
-        private void WriteHeader(List<byte> result, int sourceLength, bool shortHeader)
+        private void WriteHeader(List<byte> result, int sourceLength, bool shortHeader, bool compressed)
         {
-            byte flags = 0x45;
+            byte flags = 0x44;
+
+            if (compressed)
+            {
+                flags |= 0x01;
+            }
 
             if (shortHeader)
             {
-                result[0] = flags;
                 result[1] = (byte)result.Count;
                 result[2] = (byte)sourceLength;
             }
             else
             {
-                result[0] = (byte)(flags | 0x02);
-
+                flags |= 0x02;
                 byte[] rLengthBytes = BitConverter.GetBytes(result.Count);
                 byte[] sLengthBytes = BitConverter.GetBytes(sourceLength);
 
@@ -171,9 +183,11 @@ namespace FreeSpeak.Protocols.TeamSpeak.Compression
                     result[5 + i] = sLengthBytes[i];
                 }
             }
+
+            result[0] = flags;
         }
 
-        private int Hash(int value) => ((value >> 12) ^ value) & 0xfff;
+        private int Hash(int value) => ((value >> 12) ^ value) & 0xFFF;
 
         private bool SameValues(byte[] data, int start, int end)
         {
@@ -188,6 +202,29 @@ namespace FreeSpeak.Protocols.TeamSpeak.Compression
             }
 
             return true;
+        }
+
+        private bool CheckInefficient(ref int control, int sourcePosition, int level, ref int controlPosition, List<byte> result, byte[] data)
+        {
+            if ((control & 1) != 0)
+            {
+                if (sourcePosition > 3 * data.Length / 4 && result.Count > sourcePosition - (sourcePosition / 32))
+                {
+                    int headerLength = data.Length < 216 ? 3 : 9;
+                    result.Clear();
+                    result.AddRange(new byte[headerLength]);
+                    result.AddRange(data);
+                    WriteHeader(result, data.Length, headerLength == 3, false);
+                    return true;
+                }
+
+                WriteControl(result, controlPosition, (control >> 1) | (1 << 31));
+                controlPosition = result.Count;
+                result.AddRange(new byte[4]);
+                control = 1 << 31;
+            }
+
+            return false;
         }
     }
 }
