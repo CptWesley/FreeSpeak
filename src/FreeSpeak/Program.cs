@@ -17,14 +17,14 @@ namespace FreeSpeak
         public static void Main(string[] args)
         {
             using UdpClient udp = new UdpClient(9987);
-            IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
             ILogger logger = new ConsoleLogger();
 
             while (true)
             {
+                IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
                 byte[] packetBytes = udp.Receive(ref ep);
                 ClientPacket packet = ClientPacket.Parse(packetBytes);
-                logger.WriteInfo($"{packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
+                logger.WriteInfo($"{ep.Address}:{ep.Port} -> {packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
             }
         }
     }
