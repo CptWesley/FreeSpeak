@@ -1,5 +1,7 @@
-﻿using System;
-using FreeSpeak.Servers.TeamSpeak;
+﻿using FreeSpeak.Loggers;
+using FreeSpeak.Packets;
+using System.Net;
+using System.Net.Sockets;
 
 namespace FreeSpeak
 {
@@ -14,22 +16,15 @@ namespace FreeSpeak
         /// <param name="args">The program arguments.</param>
         public static void Main(string[] args)
         {
-            ConsoleLogger logger = new ConsoleLogger();
-            TeamSpeakServer server = new TeamSpeakServer(439);
-            server.Logger = logger;
-            server.StartListening();
+            using UdpClient udp = new UdpClient(9987);
+            IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
+            ILogger logger = new ConsoleLogger();
 
             while (true)
             {
-                string command = Console.ReadLine();
-                switch (command)
-                {
-                    case "exit":
-                        return;
-                    default:
-                        logger.WriteError($"Unknown command '{command}'.");
-                        break;
-                }
+                byte[] packetBytes = udp.Receive(ref ep);
+                ClientPacket packet = ClientPacket.Parse(packetBytes);
+                logger.WriteInfo($"{packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
             }
         }
     }
