@@ -9,15 +9,15 @@ namespace FreeSpeak
     /// Represents a TeamSpeak server.
     /// </summary>
     /// <seealso cref="IDisposable" />
-    public class Server : IDisposable
+    public class TeamSpeakServer : IDisposable
     {
         private readonly UdpClient client;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Server"/> class.
+        /// Initializes a new instance of the <see cref="TeamSpeakServer"/> class.
         /// </summary>
         /// <param name="port">The port.</param>
-        public Server(int port)
+        public TeamSpeakServer(int port)
         {
             Port = port;
             client = new UdpClient(port);

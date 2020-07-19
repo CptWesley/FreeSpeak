@@ -1,4 +1,5 @@
-﻿using FreeSpeak.Loggers;
+﻿using System.Globalization;
+using FreeSpeak.Loggers;
 using FreeSpeak.Packets;
 
 namespace FreeSpeak
@@ -14,7 +15,8 @@ namespace FreeSpeak
         /// <param name="args">The program arguments.</param>
         public static void Main(string[] args)
         {
-            using Server udp = new Server(9987);
+            int port = args?.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 9987;
+            using TeamSpeakServer udp = new TeamSpeakServer(port);
             ILogger logger = new ConsoleLogger();
 
             while (true)

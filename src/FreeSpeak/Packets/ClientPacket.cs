@@ -75,10 +75,8 @@ namespace FreeSpeak.Packets
         /// <returns>The parsed client packet.</returns>
         public static ClientPacket Parse(IPEndPoint sender, byte[] bytes)
         {
-            using (MemoryStream ms = new MemoryStream(bytes))
-            {
-                return Parse(sender, ms);
-            }
+            using MemoryStream ms = new MemoryStream(bytes);
+            return Parse(sender, ms);
         }
 
         /// <summary>
