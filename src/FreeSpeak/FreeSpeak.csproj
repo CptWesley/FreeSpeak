@@ -1,17 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-	<CodeAnalysisRuleSet>../Ruleset.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\documentation.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\documentation.xml</DocumentationFile>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <CodeAnalysisRuleSet>../Ruleset.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
   
   <ItemGroup>
@@ -20,17 +11,11 @@
   
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.2">
-		<PrivateAssets>all</PrivateAssets>
-		<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-	</PackageReference>
-	<PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
-		<PrivateAssets>all</PrivateAssets>
-	</PackageReference>
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\FreeSpeak.Servers.TeamSpeak\FreeSpeak.Servers.TeamSpeak.csproj" />
-    <ProjectReference Include="..\FreeSpeak.Servers\FreeSpeak.Servers.csproj" />
-  </ItemGroup>
-
 </Project>
