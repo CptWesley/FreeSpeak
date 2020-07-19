@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using ExtensionNet.Streams;
 using ExtensionNet.Types;
 
@@ -13,14 +14,16 @@ namespace FreeSpeak.Packets
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientPacket"/> class.
         /// </summary>
+        /// <param name="sender">The sender.</param>
         /// <param name="mac">The mac.</param>
         /// <param name="pid">The pid.</param>
         /// <param name="cid">The cid.</param>
         /// <param name="type">The type.</param>
         /// <param name="flags">The flags.</param>
         /// <param name="data">The data.</param>
-        public ClientPacket(ulong mac, ushort pid, ushort cid, PacketType type, PacketFlags flags, byte[] data)
+        public ClientPacket(IPEndPoint sender, ulong mac, ushort pid, ushort cid, PacketType type, PacketFlags flags, byte[] data)
         {
+            Sender = sender;
             MessageAuthenticationCode = mac;
             PacketId = pid;
             ClientId = cid;
@@ -28,6 +31,11 @@ namespace FreeSpeak.Packets
             Flags = flags;
             Data = data;
         }
+
+        /// <summary>
+        /// Gets the sender.
+        /// </summary>
+        public IPEndPoint Sender { get; }
 
         /// <summary>
         /// Gets the message authentication code.
@@ -62,22 +70,24 @@ namespace FreeSpeak.Packets
         /// <summary>
         /// Parses the specified stream.
         /// </summary>
+        /// <param name="sender">The sender.</param>
         /// <param name="bytes">The packet bytes.</param>
         /// <returns>The parsed client packet.</returns>
-        public static ClientPacket Parse(byte[] bytes)
+        public static ClientPacket Parse(IPEndPoint sender, byte[] bytes)
         {
             using (MemoryStream ms = new MemoryStream(bytes))
             {
-                return Parse(ms);
+                return Parse(sender, ms);
             }
         }
 
         /// <summary>
         /// Parses the specified stream.
         /// </summary>
+        /// <param name="sender">The sender.</param>
         /// <param name="stream">The packet stream.</param>
         /// <returns>The parsed client packet.</returns>
-        public static ClientPacket Parse(Stream stream)
+        public static ClientPacket Parse(IPEndPoint sender, Stream stream)
         {
             if (stream is null)
             {
@@ -95,7 +105,7 @@ namespace FreeSpeak.Packets
             byte[] data = new byte[size];
             Array.Copy(buffer, data, size);
 
-            return new ClientPacket(mac, pid, cid, type, flags, data);
+            return new ClientPacket(sender, mac, pid, cid, type, flags, data);
         }
     }
 }

@@ -1,7 +1,5 @@
 ﻿using FreeSpeak.Loggers;
 using FreeSpeak.Packets;
-using System.Net;
-using System.Net.Sockets;
 
 namespace FreeSpeak
 {
@@ -16,15 +14,13 @@ namespace FreeSpeak
         /// <param name="args">The program arguments.</param>
         public static void Main(string[] args)
         {
-            using UdpClient udp = new UdpClient(9987);
+            using Server udp = new Server(9987);
             ILogger logger = new ConsoleLogger();
 
             while (true)
             {
-                IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
-                byte[] packetBytes = udp.Receive(ref ep);
-                ClientPacket packet = ClientPacket.Parse(packetBytes);
-                logger.WriteInfo($"{ep.Address}:{ep.Port} -> {packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
+                ClientPacket packet = udp.Receive();
+                logger.WriteInfo($"{packet.Sender.Address}:{packet.Sender.Port} -> {packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
             }
         }
     }
