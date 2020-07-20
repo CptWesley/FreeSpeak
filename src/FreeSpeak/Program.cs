@@ -33,7 +33,6 @@ namespace FreeSpeak
                     {
                         Handshake0Data data = packet.Data as Handshake0Data;
                         ServerPacket sp = new ServerPacket(mac, 101, PacketType.Init1, PacketFlags.Unencrypted, new Handshake1Data(0, 0, data.Random.ChangeEndianness()));
-                        Console.Write($"Send rnd: {data.Random.ChangeEndianness()}");
                         server.Send(packet.Sender, sp);
                     }
                     else if (((ClientHandshakeData)packet.Data).Step == 2)
