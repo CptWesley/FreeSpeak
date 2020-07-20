@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Net.NetworkInformation;
 using ExtensionNet.Streams;
 using ExtensionNet.Types;
+using FreeSpeak.Packets.Data;
 
 namespace FreeSpeak.Packets
 {
@@ -21,7 +23,7 @@ namespace FreeSpeak.Packets
         /// <param name="type">The type.</param>
         /// <param name="flags">The flags.</param>
         /// <param name="data">The data.</param>
-        public ClientPacket(IPEndPoint sender, ulong mac, ushort pid, ushort cid, PacketType type, PacketFlags flags, byte[] data)
+        public ClientPacket(IPEndPoint sender, ulong mac, ushort pid, ushort cid, PacketType type, PacketFlags flags, PacketData data)
         {
             Sender = sender;
             MessageAuthenticationCode = mac;
@@ -65,7 +67,7 @@ namespace FreeSpeak.Packets
         /// <summary>
         /// Gets the data.
         /// </summary>
-        public byte[] Data { get; }
+        public PacketData Data { get; }
 
         /// <summary>
         /// Parses the specified stream.
@@ -98,12 +100,17 @@ namespace FreeSpeak.Packets
             byte typeFlags = stream.ReadUInt8();
             PacketType type = (PacketType)(typeFlags & 0x0F);
             PacketFlags flags = (PacketFlags)(typeFlags & 0xF0);
-            byte[] buffer = new byte[487];
-            int size = stream.Read(buffer);
-            byte[] data = new byte[size];
-            Array.Copy(buffer, data, size);
-
+            PacketData data = ParseData(type, stream);
             return new ClientPacket(sender, mac, pid, cid, type, flags, data);
+        }
+
+        private static PacketData ParseData(PacketType type, Stream stream)
+        {
+            switch (type)
+            {
+                case PacketType.Init1: return ClientHandshakeData.Parse(stream);
+                default: return new PingData();
+            }
         }
     }
 }

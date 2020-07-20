@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using FreeSpeak.Loggers;
 using FreeSpeak.Packets;
 
 namespace FreeSpeak
@@ -12,14 +13,16 @@ namespace FreeSpeak
     public class TeamSpeakServer : IDisposable
     {
         private readonly UdpClient client;
+        private readonly ILogger logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TeamSpeakServer"/> class.
         /// </summary>
         /// <param name="port">The port.</param>
-        public TeamSpeakServer(int port)
+        public TeamSpeakServer(int port, ILogger logger)
         {
             Port = port;
+            this.logger = logger;
             client = new UdpClient(port);
         }
 
@@ -37,7 +40,18 @@ namespace FreeSpeak
             IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
             byte[] packetBytes = client.Receive(ref ep);
             ClientPacket packet = ClientPacket.Parse(ep, packetBytes);
+
+            logger.WriteInfo($"{packet.Sender.Address}:{packet.Sender.Port} -> {packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
+
             return packet;
+        }
+
+        public void Send(IPEndPoint receiver, ServerPacket packet)
+        {
+            logger.WriteInfo($"{receiver.Address}:{receiver.Port} <- {packet.PacketId} {packet.Type} {packet.Flags}");
+
+            byte[] data = packet.ToBytes();
+            client.Send(data, data.Length, receiver);
         }
 
         /// <inheritdoc/>
