@@ -1,5 +1,5 @@
 ﻿using System;
-using ExtensionNet.Endian;
+using ExtensionNet;
 using FreeSpeak.Packets.Data;
 
 namespace FreeSpeak.Packets

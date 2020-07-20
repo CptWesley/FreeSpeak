@@ -1,8 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Numerics;
-using ExtensionNet.Streams;
-using ExtensionNet.Types;
+using ExtensionNet;
 
 namespace FreeSpeak.Packets.Data
 {

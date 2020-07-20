@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Globalization;
-using ExtensionNet.Endian;
+using ExtensionNet;
 using FreeSpeak.Loggers;
 using FreeSpeak.Packets;
 using FreeSpeak.Packets.Data;

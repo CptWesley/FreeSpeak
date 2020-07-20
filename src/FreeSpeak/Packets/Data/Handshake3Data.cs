@@ -1,6 +1,6 @@
-﻿using ExtensionNet.Endian;
-using System;
+﻿using System;
 using System.Numerics;
+using ExtensionNet;
 
 namespace FreeSpeak.Packets.Data
 {

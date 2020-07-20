@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Net.NetworkInformation;
-using ExtensionNet.Streams;
-using ExtensionNet.Types;
+using ExtensionNet;
 using FreeSpeak.Packets.Data;
 
 namespace FreeSpeak.Packets
