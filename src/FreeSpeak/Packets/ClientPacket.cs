@@ -92,7 +92,7 @@ namespace FreeSpeak.Packets
                 throw new ArgumentNullException(nameof(stream));
             }
 
-            ulong mac = stream.ReadUInt64();
+            ulong mac = stream.ReadUInt64(Endianness.BigEndian);
             ushort pid = stream.ReadUInt16(Endianness.BigEndian);
             ushort cid = stream.ReadUInt16(Endianness.BigEndian);
             byte typeFlags = stream.ReadUInt8();
