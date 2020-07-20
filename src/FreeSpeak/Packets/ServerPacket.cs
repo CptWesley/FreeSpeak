@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using ExtensionNet;
 using FreeSpeak.Packets.Data;
 
@@ -53,15 +54,12 @@ namespace FreeSpeak.Packets
 
         public byte[] ToBytes()
         {
-            byte[] data = Data.ToBytes();
-            byte[] result = new byte[11 + data.Length];
-            byte[] mac = BitConverter.IsLittleEndian ? BitConverter.GetBytes(MessageAuthenticationCode.ChangeEndianness()) : BitConverter.GetBytes(MessageAuthenticationCode);
-            Array.Copy(mac, 0, result, 0, 8);
-            byte[] pid = BitConverter.IsLittleEndian ? BitConverter.GetBytes(PacketId.ChangeEndianness()) : BitConverter.GetBytes(PacketId);
-            Array.Copy(pid, 0, result, 8, 2);
-            result[10] = (byte)((byte)Flags + (byte)Type);
-            Array.Copy(data, 0, result, 11, data.Length);
-            return result;
+            using MemoryStream ms = new MemoryStream();
+            ms.Write(MessageAuthenticationCode, Endianness.BigEndian);
+            ms.Write(PacketId, Endianness.BigEndian);
+            ms.Write((byte)((byte)Flags + (byte)Type));
+            ms.Write(Data.ToBytes());
+            return ms.ToArray();
         }
     }
 }
