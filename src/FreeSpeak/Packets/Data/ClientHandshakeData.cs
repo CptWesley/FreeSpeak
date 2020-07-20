@@ -23,8 +23,6 @@ namespace FreeSpeak.Packets.Data
             uint version = stream.ReadUInt32(Endianness.BigEndian);
             byte step = stream.ReadUInt8();
 
-            Console.WriteLine($"Step: {step}");
-
             if (step == 0)
             {
                 uint timestamp = stream.ReadUInt32(Endianness.BigEndian);
@@ -37,7 +35,6 @@ namespace FreeSpeak.Packets.Data
                 ulong sl = stream.ReadUInt64(Endianness.BigEndian);
                 ulong sr = stream.ReadUInt64(Endianness.BigEndian);
                 uint reversedRandom = stream.ReadUInt32(Endianness.BigEndian);
-                Console.Write($"Found rnd: {reversedRandom}");
                 return new Handshake2Data(version, sl, sr, reversedRandom);
             }
             else if (step == 4)
@@ -58,10 +55,6 @@ namespace FreeSpeak.Packets.Data
                 BigInteger x = new BigInteger(xb);
                 BigInteger n = new BigInteger(nb);
                 BigInteger y = new BigInteger(yb);
-
-                BigInteger yx = BigInteger.ModPow(x, BigInteger.Pow(2, (int)level), n);
-
-                Console.WriteLine($"Actual y: {y} should b: {yx}");
 
                 return new Handshake4Data(version, x, n, level, stuff, y);
             }
