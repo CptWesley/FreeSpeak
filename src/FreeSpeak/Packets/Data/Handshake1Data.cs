@@ -3,23 +3,42 @@ using ExtensionNet;
 
 namespace FreeSpeak.Packets.Data
 {
-    public class Handshake1Data : PacketData
+    /// <summary>
+    /// Second packet of the low level handshake.
+    /// </summary>
+    /// <seealso cref="HandshakeData" />
+    public class Handshake1Data : HandshakeData
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Handshake1Data"/> class.
+        /// </summary>
+        /// <param name="serverLeft">The left server bytes.</param>
+        /// <param name="serverRight">The right server bytes.</param>
+        /// <param name="reversedRandom">The reversed random bits.</param>
         public Handshake1Data(ulong serverLeft, ulong serverRight, uint reversedRandom)
+            : base(1)
         {
             ServerLeft = serverLeft;
             ServerRight = serverRight;
             ReversedRandom = reversedRandom;
         }
 
-        public byte Step => 1;
-
+        /// <summary>
+        /// Gets the left server bytes.
+        /// </summary>
         public ulong ServerLeft { get; }
 
+        /// <summary>
+        /// Gets the right server bytes.
+        /// </summary>
         public ulong ServerRight { get; }
 
+        /// <summary>
+        /// Gets the reversed random bits.
+        /// </summary>
         public uint ReversedRandom { get; }
 
+        /// <inheritdoc/>
         public override byte[] ToBytes()
         {
             byte[] result = new byte[21];

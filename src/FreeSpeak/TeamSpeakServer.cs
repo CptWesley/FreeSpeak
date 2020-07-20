@@ -19,6 +19,7 @@ namespace FreeSpeak
         /// Initializes a new instance of the <see cref="TeamSpeakServer"/> class.
         /// </summary>
         /// <param name="port">The port.</param>
+        /// <param name="logger">The logger used by the server.</param>
         public TeamSpeakServer(int port, ILogger logger)
         {
             Port = port;
@@ -46,8 +47,23 @@ namespace FreeSpeak
             return packet;
         }
 
+        /// <summary>
+        /// Sends the given packet to the specified receiver.
+        /// </summary>
+        /// <param name="receiver">The receiver.</param>
+        /// <param name="packet">The packet.</param>
         public void Send(IPEndPoint receiver, ServerPacket packet)
         {
+            if (receiver is null)
+            {
+                throw new ArgumentNullException(nameof(receiver));
+            }
+
+            if (packet is null)
+            {
+                throw new ArgumentNullException(nameof(packet));
+            }
+
             logger.WriteInfo($"{receiver.Address}:{receiver.Port} <- {packet.PacketId} {packet.Type} {packet.Flags}");
 
             byte[] data = packet.ToBytes();

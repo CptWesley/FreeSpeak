@@ -1,12 +1,26 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Numerics;
 using ExtensionNet;
 
 namespace FreeSpeak.Packets.Data
 {
-    public class Handshake3Data : PacketData
+    /// <summary>
+    /// Fourth packet of the low level handshake.
+    /// </summary>
+    /// <seealso cref="HandshakeData" />
+    public class Handshake3Data : HandshakeData
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Handshake3Data"/> class.
+        /// </summary>
+        /// <param name="x">The x.</param>
+        /// <param name="n">The n.</param>
+        /// <param name="level">The level.</param>
+        /// <param name="stuff">The stuff.</param>
         public Handshake3Data(BigInteger x, BigInteger n, uint level, byte[] stuff)
+            : base(3)
         {
             X = x;
             N = n;
@@ -14,31 +28,36 @@ namespace FreeSpeak.Packets.Data
             ServerStuff = stuff;
         }
 
-        public byte Step => 3;
-
+        /// <summary>
+        /// Gets the x.
+        /// </summary>
         public BigInteger X { get; }
 
+        /// <summary>
+        /// Gets the n.
+        /// </summary>
         public BigInteger N { get; }
 
+        /// <summary>
+        /// Gets the level.
+        /// </summary>
         public uint Level { get; }
 
-        public byte[] ServerStuff { get; }
+        /// <summary>
+        /// Gets the server stuff.
+        /// </summary>
+        public IEnumerable<byte> ServerStuff { get; }
 
+        /// <inheritdoc/>
         public override byte[] ToBytes()
         {
-            byte[] result = new byte[233];
-            result[0] = Step;
-            byte[] x = X.ToByteArray(true, true);
-            Array.Copy(x, 0, result, 65 - x.Length, x.Length);
-            byte[] n = N.ToByteArray(true, true);
-            Array.Copy(n, 0, result, 129 - n.Length, n.Length);
-
-            byte[] level = BitConverter.IsLittleEndian ? BitConverter.GetBytes(Level.ChangeEndianness()) : BitConverter.GetBytes(Level);
-            Array.Copy(level, 0, result, 129, 4);
-
-            Array.Copy(ServerStuff, 0, result, 133, 100);
-
-            return result;
+            using MemoryStream ms = new MemoryStream();
+            ms.Write(Step);
+            ms.Write(X, 64, Endianness.BigEndian);
+            ms.Write(N, 64, Endianness.BigEndian);
+            ms.Write(Level, Endianness.BigEndian);
+            ms.Write(ServerStuff.ToArray());
+            return ms.ToArray();
         }
     }
 }

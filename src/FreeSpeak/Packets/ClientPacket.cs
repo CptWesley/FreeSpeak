@@ -103,12 +103,10 @@ namespace FreeSpeak.Packets
         }
 
         private static PacketData ParseData(PacketType type, Stream stream)
-        {
-            switch (type)
+            => type switch
             {
-                case PacketType.Init1: return ClientHandshakeData.Parse(stream);
-                default: return new PingData();
-            }
-        }
+                PacketType.Init1 => ClientHandshakeData.Parse(stream),
+                _ => new PingData(),
+            };
     }
 }

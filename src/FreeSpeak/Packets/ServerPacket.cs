@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using ExtensionNet;
 using FreeSpeak.Packets.Data;
 
@@ -52,6 +51,10 @@ namespace FreeSpeak.Packets
         /// </summary>
         public PacketData Data { get; }
 
+        /// <summary>
+        /// Converts the packet to bytes that can be transmitted over the network.
+        /// </summary>
+        /// <returns>The bytes representing the packet.</returns>
         public byte[] ToBytes()
         {
             using MemoryStream ms = new MemoryStream();
