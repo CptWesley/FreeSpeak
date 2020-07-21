@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using ExtensionNet;
@@ -67,32 +68,13 @@ namespace FreeSpeak
         {
             while (true)
             {
-                ClientPacket packet = Receive();
-                queues.TryAdd(packet.Sender, new PacketReceiveQueue(packet.Sender, logger));
-
-                if (packet.Type == PacketType.Init1)
+                try
                 {
-                    ulong mac = 0x545333494E495431;
-                    if (((ClientHandshakeData)packet.Data).Step == 0)
-                    {
-                        Handshake0Data data = packet.Data as Handshake0Data;
-                        ServerPacket sp = new ServerPacket(mac, 101, PacketType.Init1, PacketFlags.Unencrypted, new Handshake1Data(0, 0, data.Random.ChangeEndianness()));
-                        Send(packet.Sender, sp);
-                    }
-                    else if (((ClientHandshakeData)packet.Data).Step == 2)
-                    {
-                        Handshake2Data data = packet.Data as Handshake2Data;
-                        ServerPacket sp = new ServerPacket(mac, 101, PacketType.Init1, PacketFlags.Unencrypted, new Handshake3Data(4, 7, 10, new byte[100]));
-                        Send(packet.Sender, sp);
-                    }
-                    else if (((ClientHandshakeData)packet.Data).Step == 4)
-                    {
-                        // Do some verification?
-                    }
+                    HandleSingle();
                 }
-                else
+                catch (IllegalClientOperationException e)
                 {
-                    queues[packet.Sender].Process(packet);
+                    logger.WriteError(e.Message);
                 }
             }
         }
@@ -129,6 +111,53 @@ namespace FreeSpeak
             logger.WriteInfo($"{packet.Sender.Address}:{packet.Sender.Port} -> {packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
 
             return packet;
+        }
+
+        private void HandleSingle()
+        {
+            ClientPacket packet = Receive();
+            queues.TryAdd(packet.Sender, new PacketReceiveQueue(packet.Sender, logger));
+
+            if (packet.Type == PacketType.Init1)
+            {
+                ulong mac = 0x545333494E495431;
+                if (((ClientHandshakeData)packet.Data).Step == 0)
+                {
+                    Handshake0Data data = packet.Data as Handshake0Data;
+                    ServerPacket sp = new ServerPacket(mac, 101, PacketType.Init1, PacketFlags.Unencrypted, new Handshake1Data(0, 0, data.Random.ChangeEndianness()));
+                    Send(packet.Sender, sp);
+                }
+                else if (((ClientHandshakeData)packet.Data).Step == 2)
+                {
+                    Handshake2Data data = packet.Data as Handshake2Data;
+                    ServerPacket sp = new ServerPacket(mac, 101, PacketType.Init1, PacketFlags.Unencrypted, new Handshake3Data(4, 7, 10, new byte[100]));
+                    Send(packet.Sender, sp);
+                }
+                else if (((ClientHandshakeData)packet.Data).Step == 4)
+                {
+                    // Do some verification?
+                }
+            }
+            else if (packet.Type == PacketType.Command && packet.PacketId == 0)
+            {
+                // Handles clientinitiv command.
+                byte[] key = new byte[] { 0x63, 0x3A, 0x5C, 0x77, 0x69, 0x6E, 0x64, 0x6F, 0x77, 0x73, 0x5C, 0x73, 0x79, 0x73, 0x74, 0x65 };
+                byte[] nonce = new byte[] { 0x6D, 0x5C, 0x66, 0x69, 0x72, 0x65, 0x77, 0x61, 0x6C, 0x6C, 0x33, 0x32, 0x2E, 0x63, 0x70, 0x6C };
+
+                using MemoryStream ms = new MemoryStream();
+                ms.Write(packet.PacketId);
+                ms.Write(packet.ClientId);
+                ms.Write((byte)((byte)packet.Type + (byte)packet.Flags));
+                byte[] meta = ms.ToArray();
+
+                byte[] data = packet.Data.ToBytes();
+
+                Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode.GetBytes(Endianness.BigEndian));
+            }
+            else
+            {
+                queues[packet.Sender].Process(packet);
+            }
         }
     }
 }

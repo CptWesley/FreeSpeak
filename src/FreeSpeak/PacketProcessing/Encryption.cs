@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Linq;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Macs;
+using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 
 namespace FreeSpeak.PacketProcessing
@@ -21,13 +24,37 @@ namespace FreeSpeak.PacketProcessing
         /// <returns>The encrypted data.</returns>
         public static byte[] Decrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, byte[] mac)
         {
-            byte[] n = Cmac(key, 0, nonce);
-            byte[] h = Cmac(key, 1, header);
-            byte[] c = Cmac(key, 2, data);
+            byte[] n;
+            byte[] h;
+            byte[] c;
 
-            byte[] mac2 = Xor(Xor(n, h), c);
+            try
+            {
+                n = Cmac(key, 0, nonce);
+                h = Cmac(key, 1, header);
+                c = Cmac(key, 2, data);
+            }
+            catch
+            {
+                throw new IllegalClientOperationException("Failed to pass the CMAC pass of EAX mode.");
+            }
 
-            return null;
+            byte[] otherMac = new byte[mac.Length];
+            Array.Copy(Xor(Xor(n, h), c), otherMac, otherMac.Length);
+
+            if (!Enumerable.SequenceEqual(mac, otherMac))
+            {
+                throw new IllegalClientOperationException("Encryption MAC does not match.");
+            }
+
+            try
+            {
+                return Ctr(key, n, data);
+            }
+            catch
+            {
+                throw new IllegalClientOperationException("Failed to pass the AES counter mode pass of EAX mode.");
+            }
         }
 
         private static byte[] Cmac(byte[] key, byte iv, byte[] data)
@@ -39,6 +66,18 @@ namespace FreeSpeak.PacketProcessing
             cmac.BlockUpdate(data, 0, data.Length);
             byte[] buffer = new byte[4096];
             int size = cmac.DoFinal(buffer, 0);
+            byte[] result = new byte[size];
+            Array.Copy(buffer, result, size);
+            return result;
+        }
+
+        private static byte[] Ctr(byte[] key, byte[] n, byte[] data)
+        {
+            BufferedBlockCipher ctr = new BufferedBlockCipher(new SicBlockCipher(new AesEngine()));
+            ctr.Init(false, new ParametersWithIV(new KeyParameter(key), n));
+            byte[] buffer = new byte[4096];
+            int size = ctr.ProcessBytes(data, 0, data.Length, buffer, 0);
+            size += ctr.DoFinal(buffer, size);
             byte[] result = new byte[size];
             Array.Copy(buffer, result, size);
             return result;
