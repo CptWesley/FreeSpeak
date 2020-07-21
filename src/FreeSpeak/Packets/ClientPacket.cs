@@ -102,11 +102,28 @@ namespace FreeSpeak.Packets
             return new ClientPacket(sender, mac, pid, cid, type, flags, data);
         }
 
+        /// <summary>
+        /// Converts the packet to bytes that can be transmitted over the network.
+        /// </summary>
+        /// <returns>The bytes representing the packet.</returns>
+        public byte[] ToBytes()
+        {
+            using MemoryStream ms = new MemoryStream();
+            ms.Write(MessageAuthenticationCode, Endianness.BigEndian);
+            ms.Write(PacketId, Endianness.BigEndian);
+            ms.Write(ClientId, Endianness.BigEndian);
+            ms.Write((byte)((byte)Flags + (byte)Type));
+            ms.Write(Data.ToBytes());
+            return ms.ToArray();
+        }
+
         private static PacketData ParseData(PacketType type, Stream stream)
             => type switch
             {
                 PacketType.Init1 => ClientHandshakeData.Parse(stream),
-                _ => new PingData(),
+                PacketType.Command => CommandData.Parse(stream),
+                PacketType.Ping => new PingData(),
+                _ => RawData.Parse(stream),
             };
     }
 }

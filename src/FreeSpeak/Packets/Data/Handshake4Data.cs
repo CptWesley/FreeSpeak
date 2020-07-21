@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using ExtensionNet;
 
 namespace FreeSpeak.Packets.Data
@@ -21,7 +22,8 @@ namespace FreeSpeak.Packets.Data
         /// <param name="level">The level.</param>
         /// <param name="stuff">The stuff.</param>
         /// <param name="y">The y.</param>
-        public Handshake4Data(uint version, BigInteger x, BigInteger n, uint level, byte[] stuff, BigInteger y)
+        /// <param name="command">The piggy backed command.</param>
+        public Handshake4Data(uint version, BigInteger x, BigInteger n, uint level, byte[] stuff, BigInteger y, string command)
             : base(version, 4)
         {
             X = x;
@@ -29,6 +31,7 @@ namespace FreeSpeak.Packets.Data
             Level = level;
             ServerStuff = stuff;
             Y = y;
+            Command = command;
         }
 
         /// <summary>
@@ -56,6 +59,11 @@ namespace FreeSpeak.Packets.Data
         /// </summary>
         public BigInteger Y { get; }
 
+        /// <summary>
+        /// Gets the piggy-backed command.
+        /// </summary>
+        public string Command { get; }
+
         /// <inheritdoc/>
         public override byte[] ToBytes()
         {
@@ -66,6 +74,7 @@ namespace FreeSpeak.Packets.Data
             ms.Write(N, 64, Endianness.BigEndian);
             ms.Write(Level, Endianness.BigEndian);
             ms.Write(ServerStuff.ToArray());
+            ms.Write(Encoding.UTF8.GetBytes(Command));
             return ms.ToArray();
         }
     }

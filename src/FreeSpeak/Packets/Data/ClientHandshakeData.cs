@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Numerics;
+using System.Text;
 using ExtensionNet;
 
 namespace FreeSpeak.Packets.Data
@@ -70,7 +71,9 @@ namespace FreeSpeak.Packets.Data
                 BigInteger n = new BigInteger(nb);
                 BigInteger y = new BigInteger(yb);
 
-                return new Handshake4Data(version, x, n, level, stuff, y);
+                string command = stream.ReadString(Encoding.UTF8);
+
+                return new Handshake4Data(version, x, n, level, stuff, y, command);
             }
 
             throw new InvalidOperationException("Invalid step found.");

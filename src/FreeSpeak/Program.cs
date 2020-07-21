@@ -17,7 +17,7 @@ namespace FreeSpeak
         /// <param name="args">The program arguments.</param>
         public static void Main(string[] args)
         {
-            int port = args?.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 9987;
+            int port = args?.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 19987;
             ILogger logger = new ConsoleLogger();
             using TeamSpeakServer server = new TeamSpeakServer(port, logger);
 
