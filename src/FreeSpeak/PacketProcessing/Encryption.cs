@@ -36,7 +36,7 @@ namespace FreeSpeak.PacketProcessing
             }
             catch
             {
-                throw new IllegalClientOperationException("Failed to pass the CMAC pass of EAX mode.");
+                throw new IllegalClientOperationException("Failed to pass the CMAC pass of EAX mode while decrypting.");
             }
 
             byte[] otherMac = new byte[mac.Length];
@@ -49,11 +49,50 @@ namespace FreeSpeak.PacketProcessing
 
             try
             {
-                return Ctr(key, n, data);
+                return Ctr(key, n, data, false);
             }
             catch
             {
-                throw new IllegalClientOperationException("Failed to pass the AES counter mode pass of EAX mode.");
+                throw new IllegalClientOperationException("Failed to pass the AES counter mode pass of EAX mode while decrypting.");
+            }
+        }
+
+        /// <summary>
+        /// Encrypts the specified key.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="nonce">The nonce.</param>
+        /// <param name="header">The header.</param>
+        /// <param name="data">The data.</param>
+        /// <param name="mac">The mac.</param>
+        /// <returns>The encrypted data.</returns>
+        public static byte[] Encrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, out byte[] mac)
+        {
+            byte[] n;
+            byte[] h;
+            byte[] c;
+
+            try
+            {
+                n = Cmac(key, 0, nonce);
+                h = Cmac(key, 1, header);
+                c = Cmac(key, 2, data);
+            }
+            catch
+            {
+                throw new IllegalClientOperationException("Failed to pass the CMAC pass of EAX mode while encrypting.");
+            }
+
+            mac = new byte[8];
+            Array.Copy(Xor(Xor(n, h), c), mac, mac.Length);
+
+            try
+            {
+                return Ctr(key, n, data, true);
+            }
+            catch
+            {
+                throw new IllegalClientOperationException("Failed to pass the AES counter mode pass of EAX mode while encrypting.");
             }
         }
 
@@ -71,10 +110,10 @@ namespace FreeSpeak.PacketProcessing
             return result;
         }
 
-        private static byte[] Ctr(byte[] key, byte[] n, byte[] data)
+        private static byte[] Ctr(byte[] key, byte[] n, byte[] data, bool encrypt)
         {
             BufferedBlockCipher ctr = new BufferedBlockCipher(new SicBlockCipher(new AesEngine()));
-            ctr.Init(false, new ParametersWithIV(new KeyParameter(key), n));
+            ctr.Init(encrypt, new ParametersWithIV(new KeyParameter(key), n));
             byte[] buffer = new byte[4096];
             int size = ctr.ProcessBytes(data, 0, data.Length, buffer, 0);
             size += ctr.DoFinal(buffer, size);
