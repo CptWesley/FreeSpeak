@@ -9,6 +9,11 @@ namespace FreeSpeak.Packets
     public enum PacketFlags
     {
         /// <summary>
+        /// Indicates that a packet has no flags.
+        /// </summary>
+        None = 0x00,
+
+        /// <summary>
         /// Indicates a packet is unencrypted.
         /// </summary>
         Unencrypted = 0x80,

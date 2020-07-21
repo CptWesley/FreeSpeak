@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using ExtensionNet;
 using FreeSpeak.Loggers;
+using FreeSpeak.PacketProcessing;
 using FreeSpeak.Packets;
+using FreeSpeak.Packets.Data;
 
 namespace FreeSpeak
 {
@@ -14,6 +18,7 @@ namespace FreeSpeak
     {
         private readonly UdpClient client;
         private readonly ILogger logger;
+        private readonly Dictionary<IPEndPoint, PacketReceiveQueue> queues = new Dictionary<IPEndPoint, PacketReceiveQueue>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TeamSpeakServer"/> class.
@@ -31,21 +36,6 @@ namespace FreeSpeak
         /// Gets the port.
         /// </summary>
         public int Port { get; }
-
-        /// <summary>
-        /// Receive a client packet.
-        /// </summary>
-        /// <returns>The received client packet.</returns>
-        public ClientPacket Receive()
-        {
-            IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
-            byte[] packetBytes = client.Receive(ref ep);
-            ClientPacket packet = ClientPacket.Parse(ep, packetBytes);
-
-            logger.WriteInfo($"{packet.Sender.Address}:{packet.Sender.Port} -> {packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
-
-            return packet;
-        }
 
         /// <summary>
         /// Sends the given packet to the specified receiver.
@@ -70,6 +60,43 @@ namespace FreeSpeak
             client.Send(data, data.Length, receiver);
         }
 
+        /// <summary>
+        /// Starts listening to incoming traffic.
+        /// </summary>
+        public void Listen()
+        {
+            while (true)
+            {
+                ClientPacket packet = Receive();
+                queues.TryAdd(packet.Sender, new PacketReceiveQueue(packet.Sender, logger));
+
+                if (packet.Type == PacketType.Init1)
+                {
+                    ulong mac = 0x545333494E495431;
+                    if (((ClientHandshakeData)packet.Data).Step == 0)
+                    {
+                        Handshake0Data data = packet.Data as Handshake0Data;
+                        ServerPacket sp = new ServerPacket(mac, 101, PacketType.Init1, PacketFlags.Unencrypted, new Handshake1Data(0, 0, data.Random.ChangeEndianness()));
+                        Send(packet.Sender, sp);
+                    }
+                    else if (((ClientHandshakeData)packet.Data).Step == 2)
+                    {
+                        Handshake2Data data = packet.Data as Handshake2Data;
+                        ServerPacket sp = new ServerPacket(mac, 101, PacketType.Init1, PacketFlags.Unencrypted, new Handshake3Data(4, 7, 10, new byte[100]));
+                        Send(packet.Sender, sp);
+                    }
+                    else if (((ClientHandshakeData)packet.Data).Step == 4)
+                    {
+                        // Do some verification?
+                    }
+                }
+                else
+                {
+                    queues[packet.Sender].Process(packet);
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -87,6 +114,21 @@ namespace FreeSpeak
             {
                 client.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Receive a client packet.
+        /// </summary>
+        /// <returns>The received client packet.</returns>
+        private ClientPacket Receive()
+        {
+            IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
+            byte[] packetBytes = client.Receive(ref ep);
+            ClientPacket packet = ClientPacket.Parse(ep, packetBytes);
+
+            logger.WriteInfo($"{packet.Sender.Address}:{packet.Sender.Port} -> {packet.ClientId} {packet.PacketId} {packet.Type} {packet.Flags}");
+
+            return packet;
         }
     }
 }

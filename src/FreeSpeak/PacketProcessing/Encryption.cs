@@ -3,7 +3,7 @@ using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Parameters;
 
-namespace FreeSpeak
+namespace FreeSpeak.PacketProcessing
 {
     /// <summary>
     /// Provides logic for encrypting and decrypting packets.
