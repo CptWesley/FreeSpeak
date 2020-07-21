@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using ExtensionNet;
 using FreeSpeak.Loggers;
 using FreeSpeak.PacketProcessing;
@@ -152,7 +153,9 @@ namespace FreeSpeak
 
                 byte[] data = packet.Data.ToBytes();
 
-                Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode.GetBytes(Endianness.BigEndian));
+                string command = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode.GetBytes(Endianness.BigEndian)));
+                CommandData cmd = CommandData.Parse(command);
+                logger.WriteWarning(cmd);
             }
             else
             {

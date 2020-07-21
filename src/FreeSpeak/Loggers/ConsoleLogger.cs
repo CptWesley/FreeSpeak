@@ -6,20 +6,20 @@ namespace FreeSpeak.Loggers
     /// Class logging things to the console.
     /// </summary>
     /// <seealso cref="ILogger" />
-    public class ConsoleLogger : ILogger
+    public class ConsoleLogger : Logger
     {
         private static readonly object Lock = new object();
 
         /// <inheritdoc/>
-        public void WriteError(string message)
+        public override void WriteError(string message)
             => WriteLine($"[ERROR] {message}", ConsoleColor.Red);
 
         /// <inheritdoc/>
-        public void WriteInfo(string message)
+        public override void WriteInfo(string message)
             => WriteLine($"[INFO] {message}", ConsoleColor.White);
 
         /// <inheritdoc/>
-        public void WriteWarning(string message)
+        public override void WriteWarning(string message)
             => WriteLine($"[WARNING] {message}", ConsoleColor.Yellow);
 
         private static void WriteLine(string text, ConsoleColor color)
