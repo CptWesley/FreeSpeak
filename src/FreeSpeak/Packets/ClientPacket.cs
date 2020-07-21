@@ -98,7 +98,7 @@ namespace FreeSpeak.Packets
             byte typeFlags = stream.ReadUInt8();
             PacketType type = (PacketType)(typeFlags & 0x0F);
             PacketFlags flags = (PacketFlags)(typeFlags & 0xF0);
-            PacketData data = ParseData(type, stream);
+            PacketData data = ParseData(type, flags, stream);
             return new ClientPacket(sender, mac, pid, cid, type, flags, data);
         }
 
@@ -117,13 +117,20 @@ namespace FreeSpeak.Packets
             return ms.ToArray();
         }
 
-        private static PacketData ParseData(PacketType type, Stream stream)
-            => type switch
+        private static PacketData ParseData(PacketType type, PacketFlags flags, Stream stream)
+        {
+            if (flags.HasFlag(PacketFlags.Compressed) || !flags.HasFlag(PacketFlags.Unencrypted) || flags.HasFlag(PacketFlags.Fragmented))
+            {
+                return RawData.Parse(stream);
+            }
+
+            return type switch
             {
                 PacketType.Init1 => ClientHandshakeData.Parse(stream),
                 PacketType.Command => CommandData.Parse(stream),
                 PacketType.Ping => new PingData(),
                 _ => RawData.Parse(stream),
             };
+        }
     }
 }
