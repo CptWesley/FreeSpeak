@@ -50,7 +50,7 @@ namespace FreeSpeak.PacketProcessing
 
             if (!Enumerable.SequenceEqual(mac, otherMac))
             {
-                //throw new IllegalClientOperationException("Encryption MAC does not match.");
+                throw new IllegalClientOperationException("Encryption MAC does not match.");
             }
 
             try
@@ -82,7 +82,25 @@ namespace FreeSpeak.PacketProcessing
             {
                 n = Cmac(key, 0, nonce);
                 h = Cmac(key, 1, header);
-                c = Cmac(key, 2, data);
+            }
+            catch
+            {
+                throw new IllegalClientOperationException("Failed to pass the CMAC pass of EAX mode while encrypting.");
+            }
+
+            byte[] result;
+            try
+            {
+                result = Ctr(key, n, data, true);
+            }
+            catch
+            {
+                throw new IllegalClientOperationException("Failed to pass the AES counter mode pass of EAX mode while encrypting.");
+            }
+
+            try
+            {
+                c = Cmac(key, 2, result);
             }
             catch
             {
@@ -92,14 +110,7 @@ namespace FreeSpeak.PacketProcessing
             mac = new byte[8];
             Array.Copy(Xor(Xor(n, h), c), mac, mac.Length);
 
-            try
-            {
-                return Ctr(key, n, data, true);
-            }
-            catch
-            {
-                throw new IllegalClientOperationException("Failed to pass the AES counter mode pass of EAX mode while encrypting.");
-            }
+            return result;
         }
 
         /// <summary>
