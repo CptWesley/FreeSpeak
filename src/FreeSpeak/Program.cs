@@ -31,7 +31,7 @@ namespace FreeSpeak
             (byte[] enKey, byte[] enNonce) = Encryption.GenerateKey(Packets.PacketType.Ack, 0, 0, false, siv);
             (byte[] deKey, byte[] deNonce) = Encryption.GenerateKey(Packets.PacketType.Ack, 0, 0, false, siv);
             byte[] unencrypted = Encoding.UTF8.GetBytes(value);
-            byte[] encrypted = Encryption.Encrypt(enKey, enNonce, meta, unencrypted, out byte[] mac);
+            (byte[] encrypted, byte[] mac) = Encryption.Encrypt(enKey, enNonce, meta, unencrypted);
             byte[] decrypted = Encryption.Decrypt(deKey, deNonce, meta, encrypted, mac);
 
             logger.WriteWarning($"Encrypted: {Encoding.UTF8.GetString(decrypted)}");

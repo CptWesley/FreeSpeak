@@ -72,7 +72,7 @@ namespace FreeSpeak.PacketProcessing
         /// <param name="data">The data.</param>
         /// <param name="mac">The mac.</param>
         /// <returns>The encrypted data.</returns>
-        public static byte[] Encrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, out byte[] mac)
+        public static (byte[] Data, byte[] Mac) Encrypt(byte[] key, byte[] nonce, byte[] header, byte[] data)
         {
             byte[] n;
             byte[] h;
@@ -107,10 +107,10 @@ namespace FreeSpeak.PacketProcessing
                 throw new IllegalClientOperationException("Failed to pass the CMAC pass of EAX mode while encrypting.");
             }
 
-            mac = new byte[8];
+            byte[] mac = new byte[8];
             Array.Copy(Xor(Xor(n, h), c), mac, mac.Length);
 
-            return result;
+            return (result, mac);
         }
 
         /// <summary>
