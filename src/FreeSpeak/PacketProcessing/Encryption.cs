@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Linq;
+using System.Security.Cryptography;
+using ExtensionNet;
+using FreeSpeak.Packets;
+using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
 
 namespace FreeSpeak.PacketProcessing
 {
@@ -44,7 +50,7 @@ namespace FreeSpeak.PacketProcessing
 
             if (!Enumerable.SequenceEqual(mac, otherMac))
             {
-                throw new IllegalClientOperationException("Encryption MAC does not match.");
+                //throw new IllegalClientOperationException("Encryption MAC does not match.");
             }
 
             try
@@ -94,6 +100,51 @@ namespace FreeSpeak.PacketProcessing
             {
                 throw new IllegalClientOperationException("Failed to pass the AES counter mode pass of EAX mode while encrypting.");
             }
+        }
+
+        /// <summary>
+        /// Generates the key.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="packetId">The packet identifier.</param>
+        /// <param name="packetGeneration">The packet generation.</param>
+        /// <param name="direction">The packet direction.</param>
+        /// <param name="siv">The shared IV.</param>
+        /// <returns>The key and nonce for encrypting.</returns>
+        public static (byte[] Key, byte[] Nonce) GenerateKey(PacketType type, ushort packetId, uint packetGeneration, bool direction, byte[] siv)
+        {
+            byte[] temp = new byte[6 + siv.Length];
+            temp[0] = direction ? (byte)0x30 : (byte)0x31;
+            temp[1] = (byte)type;
+            Array.Copy(packetGeneration.GetBytes(), 0, temp, 2, 4);
+            Array.Copy(siv, 0, temp, 6, siv.Length);
+            using SHA256 sha256 = SHA256.Create();
+            byte[] keyNonce = sha256.ComputeHash(temp);
+
+            byte[] key = new byte[16];
+            byte[] nonce = new byte[16];
+            Array.Copy(keyNonce, 0, key, 0, 16);
+            Array.Copy(keyNonce, 16, nonce, 0, 16);
+
+            key[0] = (byte)(key[0] ^ (byte)((packetId & 0xFF00) >> 8));
+            key[1] = (byte)(key[1] ^ (byte)((packetId & 0x00FF) >> 0));
+
+            return (key, nonce);
+        }
+
+        /// <summary>
+        /// Generates a key pair.
+        /// </summary>
+        /// <returns>The generated key pair.</returns>
+        public static AsymmetricCipherKeyPair GenerateKeys()
+        {
+            X9ECParameters curve = ECNamedCurveTable.GetByName("prime256v1");
+            ECDomainParameters domainParameters = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed());
+            ECKeyGenerationParameters parameters = new ECKeyGenerationParameters(domainParameters, new SecureRandom());
+            ECKeyPairGenerator generator = new ECKeyPairGenerator("ECDH");
+
+            generator.Init(parameters);
+            return generator.GenerateKeyPair();
         }
 
         private static byte[] Cmac(byte[] key, byte iv, byte[] data)
