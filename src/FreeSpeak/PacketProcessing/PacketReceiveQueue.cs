@@ -45,5 +45,17 @@ namespace FreeSpeak.PacketProcessing
                     break;
             }
         }
+
+        /// <summary>
+        /// Gets the packet identifier of the type.
+        /// </summary>
+        /// <param name="type">The packet type.</param>
+        /// <returns>The next packet id of the type.</returns>
+        public ushort GetPacketId(PacketType type)
+            => type switch
+            {
+                PacketType.Command => commandProcessor.PacketId,
+                _ => throw new ArgumentException($"Unknown type: {type}", nameof(type)),
+            };
     }
 }

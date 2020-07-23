@@ -20,7 +20,7 @@ namespace FreeSpeak.PacketProcessing
         /// <summary>
         /// Gets or sets the packet identifier.
         /// </summary>
-        public int PacketId { get; protected set; } = 1;
+        public ushort PacketId { get; protected set; } = 1;
 
         /// <summary>
         /// Gets or sets the packet generation.

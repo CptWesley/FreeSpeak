@@ -2,6 +2,7 @@
 using ExtensionNet;
 using FreeSpeak.Loggers;
 using FreeSpeak.PacketProcessing;
+using FreeSpeak.Packets;
 using Org.BouncyCastle.Crypto.Parameters;
 
 namespace FreeSpeak
@@ -59,5 +60,13 @@ namespace FreeSpeak
             SharedMac = mac.ToUInt64();
             SharedIV = siv;
         }
+
+        /// <summary>
+        /// Gets the packet identifier of the type.
+        /// </summary>
+        /// <param name="type">The packet type.</param>
+        /// <returns>The next packet id of the type.</returns>
+        public ushort GetPacketId(PacketType type)
+            => ReceiveQueue.GetPacketId(type);
     }
 }

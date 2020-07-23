@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -64,6 +65,26 @@ namespace FreeSpeak
 
             byte[] data = packet.ToBytes();
             client.Send(data, data.Length, receiver);
+        }
+
+        public void Send(Connection connection, PacketType type, PacketFlags flags, PacketData data)
+        {
+            ushort pid = connection.GetPacketId(type);
+            ulong mac = connection.SharedMac;
+            if (!flags.HasFlag(PacketFlags.Unencrypted))
+            {
+                using MemoryStream ms = new MemoryStream();
+                ms.Write(pid);
+                ms.Write((byte)type);
+                byte[] meta = ms.ToArray();
+                (byte[] key, byte[] nonce) = Encryption.GenerateKey(type, pid, 0, true, connection.SharedIV);
+                (byte[] tempData, byte[] tempMac) = Encryption.Encrypt(key, nonce, meta, data.ToBytes());
+                data = new RawData(tempData);
+                mac = tempMac.ToUInt64();
+            }
+
+            ServerPacket packet = new ServerPacket(mac, pid, type, flags, data);
+            Send(connection.EndPoint, packet);
         }
 
         /// <summary>
@@ -153,6 +174,13 @@ namespace FreeSpeak
                 // Handles clientinitiv command.
                 byte[] key = new byte[] { 0x63, 0x3A, 0x5C, 0x77, 0x69, 0x6E, 0x64, 0x6F, 0x77, 0x73, 0x5C, 0x73, 0x79, 0x73, 0x74, 0x65 };
                 byte[] nonce = new byte[] { 0x6D, 0x5C, 0x66, 0x69, 0x72, 0x65, 0x77, 0x61, 0x6C, 0x6C, 0x33, 0x32, 0x2E, 0x63, 0x70, 0x6C };
+
+                // Send ack.
+                (byte[] ackData, byte[] ackMac) = Encryption.Encrypt(key, nonce, new byte[] { 0, 0, (byte)PacketType.Ack }, new byte[] { 0 });
+                ServerPacket ackPacket = new ServerPacket(ackMac.ToUInt64(), 0, PacketType.Ack, PacketFlags.None, new RawData(ackData));
+                Send(connection.EndPoint, ackPacket);
+
+                // Send response.
                 byte[] meta = packet.GetHeader();
                 byte[] data = packet.Data.ToBytes();
 
@@ -177,10 +205,20 @@ namespace FreeSpeak
                     { "omega", serverOmega },
                 });
 
-                (byte[] responseKey, byte[] responseNonce) = Encryption.GenerateKey(PacketType.Command, 0, 0, true, connection.SharedIV);
-                (byte[] responseData, byte[] responseMac) = Encryption.Encrypt(responseKey, responseNonce, new byte[] { 0, 0, 2 }, responseCommand.ToBytes());
+                string xyz = $"initivexpand alpha={alpha} beta={beta} omega={serverOmega}";
+
+                responseCommand = new RawData(Encoding.UTF8.GetBytes(xyz));
+                logger.WriteWarning(xyz);
+
+                (byte[] responseData, byte[] responseMac) = Encryption.Encrypt(key, nonce, new byte[] { 0, 0, 34 }, responseCommand.ToBytes());
                 ServerPacket responsePacket = new ServerPacket(responseMac.ToUInt64(), 0, PacketType.Command, PacketFlags.NewProtocol, new RawData(responseData));
                 Send(connection.EndPoint, responsePacket);
+
+                byte[] xafds = responsePacket.GetHeader();
+
+                // Try decrypting.
+                string command2 = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, responsePacket.GetHeader(), responseData, responseMac));
+                logger.WriteError(command2);
             }
             else
             {

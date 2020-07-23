@@ -10,7 +10,7 @@ namespace FreeSpeak.PacketProcessing
     /// <seealso cref="PacketQueueProcessor" />
     internal abstract class ReorderPacketQueueProcessor : PacketQueueProcessor
     {
-        private readonly Dictionary<int, ClientPacket> queue = new Dictionary<int, ClientPacket>();
+        private readonly Dictionary<ushort, ClientPacket> queue = new Dictionary<ushort, ClientPacket>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReorderPacketQueueProcessor"/> class.
@@ -37,7 +37,7 @@ namespace FreeSpeak.PacketProcessing
             {
                 if (packet.Flags.HasFlag(PacketFlags.Fragmented))
                 {
-                    int id = PacketId + 1;
+                    ushort id = (ushort)(PacketId + 1);
                     List<ClientPacket> packets = new List<ClientPacket>();
                     packets.Add(packet);
 
