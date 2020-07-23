@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Security.Cryptography;
 using ExtensionNet;
 using FreeSpeak.Packets;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
@@ -10,6 +10,8 @@ using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
 
 namespace FreeSpeak.PacketProcessing
@@ -70,7 +72,6 @@ namespace FreeSpeak.PacketProcessing
         /// <param name="nonce">The nonce.</param>
         /// <param name="header">The header.</param>
         /// <param name="data">The data.</param>
-        /// <param name="mac">The mac.</param>
         /// <returns>The encrypted data.</returns>
         public static (byte[] Data, byte[] Mac) Encrypt(byte[] key, byte[] nonce, byte[] header, byte[] data)
         {
@@ -129,7 +130,7 @@ namespace FreeSpeak.PacketProcessing
             temp[1] = (byte)type;
             Array.Copy(packetGeneration.GetBytes(), 0, temp, 2, 4);
             Array.Copy(siv, 0, temp, 6, siv.Length);
-            using SHA256 sha256 = SHA256.Create();
+            using System.Security.Cryptography.SHA256 sha256 = System.Security.Cryptography.SHA256.Create();
             byte[] keyNonce = sha256.ComputeHash(temp);
 
             byte[] key = new byte[16];
@@ -147,7 +148,7 @@ namespace FreeSpeak.PacketProcessing
         /// Generates a key pair.
         /// </summary>
         /// <returns>The generated key pair.</returns>
-        public static AsymmetricCipherKeyPair GenerateKeys()
+        public static (ECPrivateKeyParameters Private, ECPublicKeyParameters Public) GenerateKeys()
         {
             X9ECParameters curve = ECNamedCurveTable.GetByName("prime256v1");
             ECDomainParameters domainParameters = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed());
@@ -155,7 +156,87 @@ namespace FreeSpeak.PacketProcessing
             ECKeyPairGenerator generator = new ECKeyPairGenerator("ECDH");
 
             generator.Init(parameters);
-            return generator.GenerateKeyPair();
+            AsymmetricCipherKeyPair keys = generator.GenerateKeyPair();
+            return ((ECPrivateKeyParameters)keys.Private, (ECPublicKeyParameters)keys.Public);
+        }
+
+        /// <summary>
+        /// Computes the shared mac and iv.
+        /// </summary>
+        /// <param name="alpha">The alpha.</param>
+        /// <param name="beta">The beta.</param>
+        /// <param name="privateKey">The private key.</param>
+        /// <param name="publicKey">The public key.</param>
+        /// <returns>The shared mac and shared iv.</returns>
+        public static (byte[] SharedMac, byte[] SharedIV) ComputeShared(string alpha, string beta, ECPrivateKeyParameters privateKey, ECPublicKeyParameters publicKey)
+        {
+            ECPoint sharedSecret = publicKey.Q.Multiply(privateKey.D).Normalize();
+
+            byte[] sharedData = new byte[32];
+
+            byte[] x = sharedSecret.XCoord.GetEncoded();
+            if (x.Length <= 32)
+            {
+                Array.Copy(x, 0, sharedData, 32 - x.Length, x.Length);
+            }
+            else
+            {
+                Array.Copy(x, x.Length - 32, sharedData, 0, 32);
+            }
+
+            using System.Security.Cryptography.SHA1 sha1 = System.Security.Cryptography.SHA1.Create();
+            byte[] sharedIV = sha1.ComputeHash(sharedData);
+
+            byte[] siv1 = new byte[10];
+            Array.Copy(sharedIV, 0, siv1, 0, 10);
+            byte[] siv2 = new byte[10];
+            Array.Copy(sharedIV, 10, siv2, 0, 10);
+
+            siv1 = Xor(siv1, Convert.FromBase64String(alpha));
+            siv2 = Xor(siv2, Convert.FromBase64String(beta));
+
+            Array.Copy(siv1, 0, sharedIV, 0, 10);
+            Array.Copy(siv2, 0, sharedIV, 10, 10);
+
+            byte[] sharedMac = new byte[8];
+            Array.Copy(sha1.ComputeHash(sharedIV), sharedMac, 8);
+            return (sharedMac, sharedIV);
+        }
+
+        /// <summary>
+        /// Creates a public key from an omega string.
+        /// </summary>
+        /// <param name="omega">The omega string.</param>
+        /// <returns>The public key represented by the omega string.</returns>
+        public static ECPublicKeyParameters FromOmega(string omega)
+        {
+            byte[] publicKey = Convert.FromBase64String(omega);
+            DerSequence asn = Asn1Object.FromByteArray(publicKey) as DerSequence;
+            DerInteger x = asn[2] as DerInteger;
+            DerInteger y = asn[3] as DerInteger;
+            X9ECParameters curveParameters = ECNamedCurveTable.GetByName("prime256v1");
+            ECPoint p = curveParameters.Curve.CreatePoint(x.Value, y.Value);
+            ECDomainParameters domainParameters = new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H, curveParameters.GetSeed());
+            return new ECPublicKeyParameters("ECDH", p, domainParameters);
+        }
+
+        /// <summary>
+        /// Creates an omega string from a public key.
+        /// </summary>
+        /// <param name="publicKey">The public key.</param>
+        /// <returns>The omega string.</returns>
+        public static string ToOmega(ECPublicKeyParameters publicKey)
+        {
+            byte[] xBytes = publicKey.Q.AffineXCoord.ToBigInteger().ToByteArray();
+            byte[] yBytes = publicKey.Q.AffineYCoord.ToBigInteger().ToByteArray();
+
+            Asn1Encodable bit = new DerBitString(new byte[] { 0 }, 7);
+            Asn1Encodable keySize = new DerInteger(32);
+            Asn1Encodable x = new DerInteger(new BigInteger(xBytes));
+            Asn1Encodable y = new DerInteger(new BigInteger(yBytes));
+            DerSequence seq = new DerSequence(bit, keySize, x, y);
+            byte[] bytes = seq.ToAsn1Object().GetDerEncoded();
+            return Convert.ToBase64String(bytes);
         }
 
         private static byte[] Cmac(byte[] key, byte iv, byte[] data)

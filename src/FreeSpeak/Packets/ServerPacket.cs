@@ -64,5 +64,17 @@ namespace FreeSpeak.Packets
             ms.Write(Data.ToBytes());
             return ms.ToArray();
         }
+
+        /// <summary>
+        /// Gets the header bytes.
+        /// </summary>
+        /// <returns>The bytes of the header.</returns>
+        public byte[] GetHeader()
+        {
+            using MemoryStream ms = new MemoryStream();
+            ms.Write(PacketId);
+            ms.Write((byte)((byte)Type + (byte)Flags));
+            return ms.ToArray();
+        }
     }
 }

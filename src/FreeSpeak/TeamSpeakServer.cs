@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -9,6 +8,8 @@ using FreeSpeak.Loggers;
 using FreeSpeak.PacketProcessing;
 using FreeSpeak.Packets;
 using FreeSpeak.Packets.Data;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
 
 namespace FreeSpeak
 {
@@ -20,7 +21,9 @@ namespace FreeSpeak
     {
         private readonly UdpClient client;
         private readonly ILogger logger;
-        private readonly Dictionary<IPEndPoint, PacketReceiveQueue> queues = new Dictionary<IPEndPoint, PacketReceiveQueue>();
+        private readonly Dictionary<IPEndPoint, Connection> connections = new Dictionary<IPEndPoint, Connection>();
+        private readonly ECPrivateKeyParameters privateKey;
+        private readonly ECPublicKeyParameters publicKey;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TeamSpeakServer"/> class.
@@ -32,6 +35,7 @@ namespace FreeSpeak
             Port = port;
             this.logger = logger;
             client = new UdpClient(port);
+            (privateKey, publicKey) = Encryption.GenerateKeys();
         }
 
         /// <summary>
@@ -117,7 +121,12 @@ namespace FreeSpeak
         private void HandleSingle()
         {
             ClientPacket packet = Receive();
-            queues.TryAdd(packet.Sender, new PacketReceiveQueue(packet.Sender, logger));
+            Connection connection;
+            if (!connections.TryGetValue(packet.Sender, out connection))
+            {
+                connection = new Connection(packet.Sender, logger);
+                connections.Add(packet.Sender, connection);
+            }
 
             if (packet.Type == PacketType.Init1)
             {
@@ -144,22 +153,38 @@ namespace FreeSpeak
                 // Handles clientinitiv command.
                 byte[] key = new byte[] { 0x63, 0x3A, 0x5C, 0x77, 0x69, 0x6E, 0x64, 0x6F, 0x77, 0x73, 0x5C, 0x73, 0x79, 0x73, 0x74, 0x65 };
                 byte[] nonce = new byte[] { 0x6D, 0x5C, 0x66, 0x69, 0x72, 0x65, 0x77, 0x61, 0x6C, 0x6C, 0x33, 0x32, 0x2E, 0x63, 0x70, 0x6C };
-
-                using MemoryStream ms = new MemoryStream();
-                ms.Write(packet.PacketId);
-                ms.Write(packet.ClientId);
-                ms.Write((byte)((byte)packet.Type + (byte)packet.Flags));
-                byte[] meta = ms.ToArray();
-
+                byte[] meta = packet.GetHeader();
                 byte[] data = packet.Data.ToBytes();
 
                 string command = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode.GetBytes(Endianness.BigEndian)));
                 CommandData cmd = CommandData.Parse(command);
                 logger.WriteWarning(cmd);
+
+                string alpha = cmd.Attributes["alpha"];
+                string omega = cmd.Attributes["omega"];
+
+                byte[] betaBytes = new byte[10];
+                new SecureRandom().NextBytes(betaBytes);
+                string beta = Convert.ToBase64String(betaBytes);
+                string serverOmega = Encryption.ToOmega(publicKey);
+
+                connection.SetSharedIV(privateKey, alpha, beta, omega);
+
+                PacketData responseCommand = new CommandData("initivexpand", new Dictionary<string, string>()
+                {
+                    { "alpha", alpha },
+                    { "beta", beta },
+                    { "omega", serverOmega },
+                });
+
+                (byte[] responseKey, byte[] responseNonce) = Encryption.GenerateKey(PacketType.Command, 0, 0, true, connection.SharedIV);
+                (byte[] responseData, byte[] responseMac) = Encryption.Encrypt(responseKey, responseNonce, new byte[] { 0, 0, 2 }, responseCommand.ToBytes());
+                ServerPacket responsePacket = new ServerPacket(responseMac.ToUInt64(), 0, PacketType.Command, PacketFlags.NewProtocol, new RawData(responseData));
+                Send(connection.EndPoint, responsePacket);
             }
             else
             {
-                queues[packet.Sender].Process(packet);
+                connection.ReceiveQueue.Process(packet);
             }
         }
     }
