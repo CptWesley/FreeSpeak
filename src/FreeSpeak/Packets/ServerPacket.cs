@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using ExtensionNet;
 using FreeSpeak.Packets.Data;
 
@@ -52,6 +53,38 @@ namespace FreeSpeak.Packets
         public PacketData Data { get; }
 
         /// <summary>
+        /// Parses the specified stream.
+        /// </summary>
+        /// <param name="bytes">The packet bytes.</param>
+        /// <returns>The parsed client packet.</returns>
+        public static ServerPacket Parse(byte[] bytes)
+        {
+            using MemoryStream ms = new MemoryStream(bytes);
+            return Parse(ms);
+        }
+
+        /// <summary>
+        /// Parses the specified stream.
+        /// </summary>
+        /// <param name="stream">The packet stream.</param>
+        /// <returns>The parsed client packet.</returns>
+        public static ServerPacket Parse(Stream stream)
+        {
+            if (stream is null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
+            ulong mac = stream.ReadUInt64(Endianness.BigEndian);
+            ushort pid = stream.ReadUInt16(Endianness.BigEndian);
+            byte typeFlags = stream.ReadUInt8();
+            PacketType type = (PacketType)(typeFlags & 0x0F);
+            PacketFlags flags = (PacketFlags)(typeFlags & 0xF0);
+            PacketData data = PacketData.Parse(type, flags, stream);
+            return new ServerPacket(mac, pid, type, flags, data);
+        }
+
+        /// <summary>
         /// Converts the packet to bytes that can be transmitted over the network.
         /// </summary>
         /// <returns>The bytes representing the packet.</returns>
@@ -76,5 +109,8 @@ namespace FreeSpeak.Packets
             ms.Write((byte)((byte)Type + (byte)Flags));
             return ms.ToArray();
         }
+
+        public override string ToString()
+            => $"MAC={MessageAuthenticationCode} PID={PacketId} Type={Type} Flags={Flags} Data={{{Data}}}";
     }
 }

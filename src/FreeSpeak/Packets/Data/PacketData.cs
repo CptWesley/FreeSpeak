@@ -23,7 +23,7 @@ namespace FreeSpeak.Packets.Data
 
             return type switch
             {
-                PacketType.Init1 => ClientHandshakeData.Parse(stream),
+                PacketType.Init1 => HandshakeData.Parse(stream),
                 PacketType.Command => CommandData.Parse(stream),
                 PacketType.Ping => new PingData(),
                 _ => RawData.Parse(stream),

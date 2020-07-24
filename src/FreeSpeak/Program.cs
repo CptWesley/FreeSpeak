@@ -16,8 +16,9 @@ namespace FreeSpeak
         {
             int port = args?.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 9987;
             ILogger logger = new ConsoleLogger();
-            using TeamSpeakServer server = new TeamSpeakServer(port, logger);
-            server.Listen();
+            //using TeamSpeakServer server = new TeamSpeakServer(port, logger);
+            //server.Listen();
+            new RelayServer("127.0.0.1", 9987, 19987, logger).Listen();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using ExtensionNet;
 using FreeSpeak.Packets;
@@ -210,7 +211,7 @@ namespace FreeSpeak.PacketProcessing
         /// <returns>The public key represented by the omega string.</returns>
         public static ECPublicKeyParameters FromOmega(string omega)
         {
-            byte[] publicKey = Convert.FromBase64String(omega);
+            byte[] publicKey = Convert.FromBase64String(omega.Replace("\\", string.Empty, StringComparison.InvariantCulture));
             DerSequence asn = Asn1Object.FromByteArray(publicKey) as DerSequence;
             DerInteger x = asn[2] as DerInteger;
             DerInteger y = asn[3] as DerInteger;

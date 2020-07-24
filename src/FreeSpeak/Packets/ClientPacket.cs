@@ -129,5 +129,8 @@ namespace FreeSpeak.Packets
             ms.Write((byte)((byte)Type + (byte)Flags));
             return ms.ToArray();
         }
+
+        public override string ToString()
+            => $"MAC={MessageAuthenticationCode} PID={PacketId} CID={ClientId} Type={Type} Flags={Flags} Data={{{Data}}}";
     }
 }
