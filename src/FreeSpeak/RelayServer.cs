@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using FreeSpeak.Loggers;
 using FreeSpeak.PacketProcessing;
 using FreeSpeak.Packets;
@@ -79,7 +78,7 @@ namespace FreeSpeak
                 logger.WriteWarning($"Sending to client: {packet}");
                 if (packet.Type == PacketType.Command && packet.PacketId == 0)
                 {
-                    string x = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, packet.GetHeader(), ((RawData)packet.Data).Data.ToArray(), packet.MessageAuthenticationCode));
+                    string x = Encoding.Utf8(Encryption.Decrypt(key, nonce, packet.GetHeader(), ((RawData)packet.Data).Data.ToArray(), packet.MessageAuthenticationCode));
                     logger.WriteWarning(x);
                 }
 
@@ -91,7 +90,7 @@ namespace FreeSpeak
                 logger.WriteError($"Sending to server: {packet}");
                 if (packet.Type == PacketType.Command && packet.PacketId == 0)
                 {
-                    string x = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, packet.GetHeader(), ((RawData)packet.Data).Data.ToArray(), packet.MessageAuthenticationCode));
+                    string x = Encoding.Utf8(Encryption.Decrypt(key, nonce, packet.GetHeader(), ((RawData)packet.Data).Data.ToArray(), packet.MessageAuthenticationCode));
                     logger.WriteError(x);
                 }
 

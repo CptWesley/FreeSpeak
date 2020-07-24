@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using ExtensionNet;
 using FreeSpeak.Loggers;
 using FreeSpeak.PacketProcessing;
@@ -245,7 +244,7 @@ namespace FreeSpeak
                 byte[] meta = packet.GetHeader();
                 byte[] data = packet.Data.ToBytes();
 
-                string command = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode));
+                string command = Encoding.Utf8(Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode));
                 CommandData cmd = CommandData.Parse(command);
                 logger.WriteWarning(cmd);
 
@@ -254,7 +253,7 @@ namespace FreeSpeak
 
                 byte[] betaBytes = new byte[10];
                 new SecureRandom().NextBytes(betaBytes);
-                string beta = Convert.ToBase64String(betaBytes);
+                string beta = Encoding.Base64(betaBytes);
                 string serverOmega = Encryption.ToOmega(publicKey);
 
                 connection.SetSharedIV(privateKey, alpha, beta, omega);
@@ -268,7 +267,7 @@ namespace FreeSpeak
 
                 string xyz = $"initivexpand alpha={alpha} beta={beta} omega={serverOmega}";
 
-                responseCommand = new RawData(Encoding.UTF8.GetBytes(xyz));
+                responseCommand = new RawData(Encoding.Utf8(xyz));
                 logger.WriteWarning(xyz);
 
                 byte[] header = Encryption.GetHeader(0, PacketType.Command, PacketFlags.None);
@@ -279,7 +278,7 @@ namespace FreeSpeak
                 byte[] xafds = responsePacket.GetHeader();
 
                 // Try decrypting.
-                string command2 = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, responsePacket.GetHeader(), responseData, responseMac));
+                string command2 = Encoding.Utf8(Encryption.Decrypt(key, nonce, responsePacket.GetHeader(), responseData, responseMac));
                 logger.WriteError(command2);
             }
             else

@@ -194,8 +194,8 @@ namespace FreeSpeak.PacketProcessing
             byte[] siv2 = new byte[10];
             Array.Copy(sharedIV, 10, siv2, 0, 10);
 
-            siv1 = Xor(siv1, Convert.FromBase64String(alpha));
-            siv2 = Xor(siv2, Convert.FromBase64String(beta));
+            siv1 = Xor(siv1, Encoding.Base64(alpha));
+            siv2 = Xor(siv2, Encoding.Base64(beta));
 
             Array.Copy(siv1, 0, sharedIV, 0, 10);
             Array.Copy(siv2, 0, sharedIV, 10, 10);
@@ -212,7 +212,7 @@ namespace FreeSpeak.PacketProcessing
         /// <returns>The public key represented by the omega string.</returns>
         public static ECPublicKeyParameters FromOmega(string omega)
         {
-            byte[] publicKey = Convert.FromBase64String(omega.Replace("\\", string.Empty, StringComparison.InvariantCulture));
+            byte[] publicKey = Encoding.Base64(omega);
             DerSequence asn = Asn1Object.FromByteArray(publicKey) as DerSequence;
             DerInteger x = asn[2] as DerInteger;
             DerInteger y = asn[3] as DerInteger;
@@ -238,7 +238,7 @@ namespace FreeSpeak.PacketProcessing
             Asn1Encodable y = new DerInteger(new BigInteger(yBytes));
             DerSequence seq = new DerSequence(bit, keySize, x, y);
             byte[] bytes = seq.ToAsn1Object().GetDerEncoded();
-            return Convert.ToBase64String(bytes);
+            return Encoding.Base64(bytes);
         }
 
         /// <summary>
