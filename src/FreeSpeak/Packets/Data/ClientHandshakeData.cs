@@ -33,7 +33,7 @@ namespace FreeSpeak.Packets.Data
         /// </summary>
         /// <param name="stream">The stream.</param>
         /// <returns>The parsed handshake data.</returns>
-        public static ClientHandshakeData Parse(Stream stream)
+        public static new ClientHandshakeData Parse(Stream stream)
         {
             uint version = stream.ReadUInt32(Endianness.BigEndian);
             byte step = stream.ReadUInt8();

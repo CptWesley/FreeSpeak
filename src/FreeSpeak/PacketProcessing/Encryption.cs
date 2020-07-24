@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using ExtensionNet;
@@ -32,7 +31,7 @@ namespace FreeSpeak.PacketProcessing
         /// <param name="data">The data.</param>
         /// <param name="mac">The mac.</param>
         /// <returns>The encrypted data.</returns>
-        public static byte[] Decrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, byte[] mac)
+        public static byte[] Decrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, ulong mac)
         {
             byte[] n;
             byte[] h;
@@ -49,10 +48,11 @@ namespace FreeSpeak.PacketProcessing
                 throw new IllegalClientOperationException("Failed to pass the CMAC pass of EAX mode while decrypting.");
             }
 
-            byte[] otherMac = new byte[mac.Length];
+            byte[] macBytes = mac.GetBytes(Endianness.BigEndian);
+            byte[] otherMac = new byte[macBytes.Length];
             Array.Copy(Xor(Xor(n, h), c), otherMac, otherMac.Length);
 
-            if (!Enumerable.SequenceEqual(mac, otherMac))
+            if (!Enumerable.SequenceEqual(macBytes, otherMac))
             {
                 throw new IllegalClientOperationException("Encryption MAC does not match.");
             }
@@ -75,7 +75,7 @@ namespace FreeSpeak.PacketProcessing
         /// <param name="header">The header.</param>
         /// <param name="data">The data.</param>
         /// <returns>The encrypted data.</returns>
-        public static (byte[] Data, byte[] Mac) Encrypt(byte[] key, byte[] nonce, byte[] header, byte[] data)
+        public static (byte[] Data, ulong Mac) Encrypt(byte[] key, byte[] nonce, byte[] header, byte[] data)
         {
             byte[] n;
             byte[] h;
@@ -113,7 +113,7 @@ namespace FreeSpeak.PacketProcessing
             byte[] mac = new byte[8];
             Array.Copy(Xor(Xor(n, h), c), mac, mac.Length);
 
-            return (result, mac);
+            return (result, mac.ToUInt64(Endianness.BigEndian));
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Numerics;
 using ExtensionNet;
 
@@ -30,6 +31,11 @@ namespace FreeSpeak.Packets.Data
         /// <returns>The parsed handshake data.</returns>
         public static HandshakeData Parse(Stream stream)
         {
+            if (stream is null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
             long pos = stream.Position;
             byte step = stream.ReadUInt8();
             if (step == 1)

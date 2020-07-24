@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using ExtensionNet;
 using FreeSpeak.Loggers;
 using FreeSpeak.PacketProcessing;
@@ -55,6 +56,26 @@ namespace FreeSpeak
         /// <param name="omega">The omega.</param>
         public void SetSharedIV(ECPrivateKeyParameters privateKey, string alpha, string beta, string omega)
         {
+            if (privateKey is null)
+            {
+                throw new ArgumentNullException(nameof(privateKey));
+            }
+
+            if (alpha is null)
+            {
+                throw new ArgumentNullException(nameof(alpha));
+            }
+
+            if (beta is null)
+            {
+                throw new ArgumentNullException(nameof(beta));
+            }
+
+            if (omega is null)
+            {
+                throw new ArgumentNullException(nameof(omega));
+            }
+
             ECPublicKeyParameters publicKey = Encryption.FromOmega(omega);
             (byte[] mac, byte[] siv) = Encryption.ComputeShared(alpha, beta, privateKey, publicKey);
             SharedMac = mac.ToUInt64();

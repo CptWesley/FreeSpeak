@@ -67,8 +67,25 @@ namespace FreeSpeak
             client.Send(data, data.Length, receiver);
         }
 
+        /// <summary>
+        /// Creates and sends a packet over the designated connection.
+        /// </summary>
+        /// <param name="connection">The connection.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="flags">The flags.</param>
+        /// <param name="data">The data.</param>
         public void Send(Connection connection, PacketType type, PacketFlags flags, PacketData data)
         {
+            if (connection is null)
+            {
+                throw new ArgumentNullException(nameof(connection));
+            }
+
+            if (data is null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             ushort pid = connection.GetPacketId(type);
             ulong mac = connection.SharedMac;
             if (!flags.HasFlag(PacketFlags.Unencrypted))
@@ -78,9 +95,9 @@ namespace FreeSpeak
                 ms.Write((byte)type);
                 byte[] meta = ms.ToArray();
                 (byte[] key, byte[] nonce) = Encryption.GenerateKey(type, pid, 0, true, connection.SharedIV);
-                (byte[] tempData, byte[] tempMac) = Encryption.Encrypt(key, nonce, meta, data.ToBytes());
+                (byte[] tempData, ulong tempMac) = Encryption.Encrypt(key, nonce, meta, data.ToBytes());
                 data = new RawData(tempData);
-                mac = tempMac.ToUInt64();
+                mac = tempMac;
             }
 
             ServerPacket packet = new ServerPacket(mac, pid, type, flags, data);
@@ -220,15 +237,15 @@ namespace FreeSpeak
                 byte[] nonce = new byte[] { 0x6D, 0x5C, 0x66, 0x69, 0x72, 0x65, 0x77, 0x61, 0x6C, 0x6C, 0x33, 0x32, 0x2E, 0x63, 0x70, 0x6C };
 
                 // Send ack.
-                (byte[] ackData, byte[] ackMac) = Encryption.Encrypt(key, nonce, new byte[] { 0, 0, (byte)PacketType.Ack }, new byte[] { 0 });
-                ServerPacket ackPacket = new ServerPacket(ackMac.ToUInt64(), 0, PacketType.Ack, PacketFlags.None, new RawData(ackData));
+                (byte[] ackData, ulong ackMac) = Encryption.Encrypt(key, nonce, new byte[] { 0, 0, (byte)PacketType.Ack }, new byte[] { 0 });
+                ServerPacket ackPacket = new ServerPacket(ackMac, 0, PacketType.Ack, PacketFlags.None, new RawData(ackData));
                 Send(connection.EndPoint, ackPacket);
 
                 // Send response.
                 byte[] meta = packet.GetHeader();
                 byte[] data = packet.Data.ToBytes();
 
-                string command = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode.GetBytes(Endianness.BigEndian)));
+                string command = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode));
                 CommandData cmd = CommandData.Parse(command);
                 logger.WriteWarning(cmd);
 
@@ -254,9 +271,9 @@ namespace FreeSpeak
                 responseCommand = new RawData(Encoding.UTF8.GetBytes(xyz));
                 logger.WriteWarning(xyz);
 
-                byte[] header = Encryption.GetHeader(1, PacketType.Command, PacketFlags.NewProtocol);
-                (byte[] responseData, byte[] responseMac) = Encryption.Encrypt(key, nonce, header, responseCommand.ToBytes());
-                ServerPacket responsePacket = new ServerPacket(responseMac.ToUInt64(), 1, PacketType.Command, PacketFlags.NewProtocol, new RawData(responseData));
+                byte[] header = Encryption.GetHeader(0, PacketType.Command, PacketFlags.None);
+                (byte[] responseData, ulong responseMac) = Encryption.Encrypt(key, nonce, header, responseCommand.ToBytes());
+                ServerPacket responsePacket = new ServerPacket(responseMac, 0, PacketType.Command, PacketFlags.None, new RawData(responseData));
                 Send(connection.EndPoint, responsePacket);
 
                 byte[] xafds = responsePacket.GetHeader();

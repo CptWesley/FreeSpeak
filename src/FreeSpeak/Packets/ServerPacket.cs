@@ -106,6 +106,7 @@ namespace FreeSpeak.Packets
         public byte[] GetHeader()
             => Encryption.GetHeader(PacketId, Type, Flags);
 
+        /// <inheritdoc/>
         public override string ToString()
             => $"MAC={MessageAuthenticationCode} PID={PacketId} Type={Type} Flags={Flags} Data={{{Data}}}";
     }
