@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using ExtensionNet;
 
 namespace FreeSpeak.Packets.Data
 {
@@ -23,6 +24,7 @@ namespace FreeSpeak.Packets.Data
 
             return type switch
             {
+                PacketType.Ack => new AckData(stream.ReadUInt16(Endianness.BigEndian)),
                 PacketType.Init1 => HandshakeData.Parse(stream),
                 PacketType.Command => CommandData.Parse(stream),
                 PacketType.Ping => new PingData(),
