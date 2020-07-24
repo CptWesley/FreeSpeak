@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using ExtensionNet;
 using FreeSpeak.Packets;
@@ -238,6 +239,38 @@ namespace FreeSpeak.PacketProcessing
             DerSequence seq = new DerSequence(bit, keySize, x, y);
             byte[] bytes = seq.ToAsn1Object().GetDerEncoded();
             return Convert.ToBase64String(bytes);
+        }
+
+        /// <summary>
+        /// Gets the header bytes.
+        /// </summary>
+        /// <param name="packetId">The packet ID.</param>
+        /// <param name="clientId">The client ID.</param>
+        /// <param name="type">The packet type.</param>
+        /// <param name="flags">The packet flags.</param>
+        /// <returns>The bytes of the header.</returns>
+        public static byte[] GetHeader(ushort packetId, ushort clientId, PacketType type, PacketFlags flags)
+        {
+            using MemoryStream ms = new MemoryStream();
+            ms.Write(packetId, Endianness.BigEndian);
+            ms.Write(clientId, Endianness.BigEndian);
+            ms.Write((byte)((byte)type + (byte)flags));
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// Gets the header bytes.
+        /// </summary>
+        /// <param name="packetId">The packet ID.</param>
+        /// <param name="type">The packet type.</param>
+        /// <param name="flags">The packet flags.</param>
+        /// <returns>The bytes of the header.</returns>
+        public static byte[] GetHeader(ushort packetId, PacketType type, PacketFlags flags)
+        {
+            using MemoryStream ms = new MemoryStream();
+            ms.Write(packetId, Endianness.BigEndian);
+            ms.Write((byte)((byte)type + (byte)flags));
+            return ms.ToArray();
         }
 
         private static byte[] Cmac(byte[] key, byte iv, byte[] data)

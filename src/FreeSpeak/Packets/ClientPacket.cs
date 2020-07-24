@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using ExtensionNet;
+using FreeSpeak.PacketProcessing;
 using FreeSpeak.Packets.Data;
 
 namespace FreeSpeak.Packets
@@ -122,13 +123,7 @@ namespace FreeSpeak.Packets
         /// </summary>
         /// <returns>The bytes of the header.</returns>
         public byte[] GetHeader()
-        {
-            using MemoryStream ms = new MemoryStream();
-            ms.Write(PacketId);
-            ms.Write(ClientId);
-            ms.Write((byte)((byte)Type + (byte)Flags));
-            return ms.ToArray();
-        }
+            => Encryption.GetHeader(PacketId, ClientId, Type, Flags);
 
         public override string ToString()
             => $"MAC={MessageAuthenticationCode} PID={PacketId} CID={ClientId} Type={Type} Flags={Flags} Data={{{Data}}}";

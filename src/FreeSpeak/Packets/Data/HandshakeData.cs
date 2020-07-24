@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Numerics;
-using System.Text;
 using ExtensionNet;
 
 namespace FreeSpeak.Packets.Data

@@ -254,8 +254,9 @@ namespace FreeSpeak
                 responseCommand = new RawData(Encoding.UTF8.GetBytes(xyz));
                 logger.WriteWarning(xyz);
 
-                (byte[] responseData, byte[] responseMac) = Encryption.Encrypt(key, nonce, new byte[] { 0, 0, 34 }, responseCommand.ToBytes());
-                ServerPacket responsePacket = new ServerPacket(responseMac.ToUInt64(), 0, PacketType.Command, PacketFlags.NewProtocol, new RawData(responseData));
+                byte[] header = Encryption.GetHeader(1, PacketType.Command, PacketFlags.NewProtocol);
+                (byte[] responseData, byte[] responseMac) = Encryption.Encrypt(key, nonce, header, responseCommand.ToBytes());
+                ServerPacket responsePacket = new ServerPacket(responseMac.ToUInt64(), 1, PacketType.Command, PacketFlags.NewProtocol, new RawData(responseData));
                 Send(connection.EndPoint, responsePacket);
 
                 byte[] xafds = responsePacket.GetHeader();

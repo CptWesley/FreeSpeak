@@ -22,6 +22,6 @@ namespace FreeSpeak.Packets.Data
 
         /// <inheritdoc/>
         public override byte[] ToBytes()
-            => PacketId.GetBytes();
+            => PacketId.GetBytes(Endianness.BigEndian);
     }
 }
