@@ -183,50 +183,6 @@ namespace FreeSpeak
                 else if (((ClientHandshakeData)packet.Data).Step == 4)
                 {
                     // Do some verification?
-                    /*
-                    byte[] key = new byte[] { 0x63, 0x3A, 0x5C, 0x77, 0x69, 0x6E, 0x64, 0x6F, 0x77, 0x73, 0x5C, 0x73, 0x79, 0x73, 0x74, 0x65 };
-                    byte[] nonce = new byte[] { 0x6D, 0x5C, 0x66, 0x69, 0x72, 0x65, 0x77, 0x61, 0x6C, 0x6C, 0x33, 0x32, 0x2E, 0x63, 0x70, 0x6C };
-
-                    // Send response.
-                    byte[] meta = packet.GetHeader();
-                    byte[] data = packet.Data.ToBytes();
-
-                    string command = ((Handshake4Data)packet.Data).Command;
-                    CommandData cmd = CommandData.Parse(command);
-                    logger.WriteWarning(cmd);
-
-                    string alpha = cmd.Attributes["alpha"];
-                    string omega = cmd.Attributes["omega"];
-
-                    byte[] betaBytes = new byte[10];
-                    new SecureRandom().NextBytes(betaBytes);
-                    string beta = Convert.ToBase64String(betaBytes);
-                    string serverOmega = Encryption.ToOmega(publicKey);
-
-                    connection.SetSharedIV(privateKey, alpha, beta, omega);
-
-                    PacketData responseCommand = new CommandData("initivexpand", new Dictionary<string, string>()
-                {
-                    { "alpha", alpha },
-                    { "beta", beta },
-                    { "omega", serverOmega },
-                });
-
-                    string xyz = $"initivexpand alpha={alpha} beta={beta} omega={serverOmega}";
-
-                    responseCommand = new RawData(Encoding.UTF8.GetBytes(xyz));
-                    logger.WriteWarning(xyz);
-
-                    (byte[] responseData, byte[] responseMac) = Encryption.Encrypt(key, nonce, new byte[] { 0, 0, 34 }, responseCommand.ToBytes());
-                    ServerPacket responsePacket = new ServerPacket(responseMac.ToUInt64(), 0, PacketType.Command, PacketFlags.NewProtocol, new RawData(responseData));
-                    Send(connection.EndPoint, responsePacket);
-
-                    byte[] xafds = responsePacket.GetHeader();
-
-                    // Try decrypting.
-                    string command2 = Encoding.UTF8.GetString(Encryption.Decrypt(key, nonce, responsePacket.GetHeader(), responseData, responseMac));
-                    logger.WriteError(command2);
-                    */
                 }
             }
             else if (packet.Type == PacketType.Command && packet.PacketId == 0)
@@ -246,7 +202,6 @@ namespace FreeSpeak
 
                 string command = Encoding.Utf8(Encryption.Decrypt(key, nonce, meta, data, packet.MessageAuthenticationCode));
                 CommandData cmd = CommandData.Parse(command);
-                logger.WriteWarning(cmd);
 
                 string alpha = cmd.Attributes["alpha"];
                 string omega = cmd.Attributes["omega"];
@@ -265,21 +220,10 @@ namespace FreeSpeak
                     { "omega", serverOmega },
                 });
 
-                string xyz = $"initivexpand alpha={alpha} beta={beta} omega={serverOmega}";
-
-                responseCommand = new RawData(Encoding.Utf8(xyz));
-                logger.WriteWarning(xyz);
-
                 byte[] header = Encryption.GetHeader(0, PacketType.Command, PacketFlags.None);
                 (byte[] responseData, ulong responseMac) = Encryption.Encrypt(key, nonce, header, responseCommand.ToBytes());
                 ServerPacket responsePacket = new ServerPacket(responseMac, 0, PacketType.Command, PacketFlags.None, new RawData(responseData));
                 Send(connection.EndPoint, responsePacket);
-
-                byte[] xafds = responsePacket.GetHeader();
-
-                // Try decrypting.
-                string command2 = Encoding.Utf8(Encryption.Decrypt(key, nonce, responsePacket.GetHeader(), responseData, responseMac));
-                logger.WriteError(command2);
             }
             else
             {
